@@ -1,0 +1,4 @@
+/**
+ * notification domain module for AI Job Command Center.
+ */
+package com.jobcommandcenter.notification;

@@ -1,0 +1,101 @@
+# ==============================================================================
+# Environment & Secrets (NEVER COMMIT SENSITIVE DATA)
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.env
+credentials/
+secrets/
+tokens/
+*.pem
+*.key
+*.p12
+*.jks
+client_secret*.json
+oauth_credentials*.json
+
+# ==============================================================================
+# Java & Maven
+# ==============================================================================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+.mvn/wrapper/maven-wrapper.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/.develocity
+
+# ==============================================================================
+# Node & Angular
+# ==============================================================================
+node_modules/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+.npm/
+.yarn/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==============================================================================
+# IDEs & Editors
+# ==============================================================================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ==============================================================================
+# OS Generated Files
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# ==============================================================================
+# Logs & Diagnostics
+# ==============================================================================
+logs/
+*.log
+*.log.*
+hs_err_pid*
+replay_pid*
+
+# ==============================================================================
+# Storage & Local Artifacts
+# ==============================================================================
+storage/
+uploads/
+generated-resumes/
+data/
+db-data/
+scratch/
