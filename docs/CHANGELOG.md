@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - Phase 1: Backend Foundation - 2026-10-07
+
+### Added
+- **Spring Boot & Java 21 Foundation:** Configured Maven multi-starter setup with Java 21 LTS, Spring Boot 3.3.4, Spring Web, Validation, Actuator, Security, and JPA.
+- **PostgreSQL & Flyway Migrations:** Integrated PostgreSQL 16/17 driver with HikariCP connection pooling; configured Flyway migration lifecycle with initial baseline migration `V1__baseline.sql` initializing `system_metadata`.
+- **Environment & Profiles:** Established hierarchical configuration architecture across `application.yml` (base), `application-local.yml` (PostgreSQL local), and `application-test.yml` (in-memory H2 PostgreSQL mode).
+- **Spring Security Foundation:** Implemented stateless `SecurityFilterChain` with CORS configuration, public whitelist (`/actuator/health/**`, `/error`, `/api/public/**`), protected API boundaries, and RFC 7807 `AuthenticationEntryPoint` / `AccessDeniedHandler`.
+- **Centralized REST Error Handling:** Implemented RFC 7807 Problem Details model (`ErrorResponse`, `ValidationError`) and `@RestControllerAdvice` (`GlobalExceptionHandler`) mapping 400, 401, 403, 404, 405, 409, and 500 status codes with sanitized error messages.
+- **Request Correlation & Logging:** Implemented `CorrelationIdFilter` propagating `X-Correlation-ID` to SLF4J MDC and HTTP response headers; implemented `RequestLoggingFilter` logging request latency and status while strictly preventing credential or body leakage.
+- **Actuator Health & Observability:** Configured Actuator `/actuator/health` and `/actuator/info` endpoints exposing application and database health.
+- **Hermetic Testing Suite:** Authored 24 unit and integration tests across security, validation, error handling, correlation, Actuator, Flyway, and PostgreSQL connectivity.
+
+---
+
 ## [0.1.0] - Phase 0: Project Foundation - 2026-10-06
 
 ### Added

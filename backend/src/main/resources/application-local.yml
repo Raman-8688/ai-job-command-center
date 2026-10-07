@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:job_command_center}}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: JobCommandCenterHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.jobcommandcenter: DEBUG
+    org.springframework.security: INFO
+    org.flywaydb: INFO
+
+# Future module configuration placeholders (Phase 1 does not require credentials to boot)
+app:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:placeholder}
+    client-secret: ${GOOGLE_CLIENT_SECRET:placeholder}
+  ai:
+    provider: ${AI_PROVIDER:placeholder}
+    api-key: ${AI_API_KEY:placeholder}
+  storage:
+    path: ${STORAGE_PATH:./storage/files}
