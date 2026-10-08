@@ -228,8 +228,8 @@ Phase 7 implements scheduled batch polling (e.g., every 15 minutes) with increme
 |---|---|---|---|
 | **Phase 0** | **Project Foundation** | Establish repository, ADRs, engineering rules, and complete docs. | Architecture docs, ADR 001-008, .env.example, docker-compose. *(Complete)* |
 | **Phase 1** | **Backend Foundation** | Spring Boot runtime, PostgreSQL, Flyway, security, error handling. | Base project skeleton, Flyway setup, GlobalExceptionHandler, Actuator, Security foundation. *(Complete - see [docs/phase-1-backend-foundation.md](phase-1-backend-foundation.md))* |
-| **Phase 2** | **User Profile & Skills** | Verified skill inventory and anti-hallucination source of truth. | User profile CRUD, verified skill tagging, category management. *(Next)* |
-| **Phase 3** | **Job Management** | Ingestion, normalization, deduplication, and persistence. | Job entity, URL parser, deduplication hashing, search filters. |
+| **Phase 2** | **User Profile & Skills** | Verified skill inventory and anti-hallucination source of truth. | User profile CRUD, verified skill tagging, category management, JWT auth, Flyway V2. *(Complete - see [docs/phase-2-user-profile-skills.md](phase-2-user-profile-skills.md))* |
+| **Phase 3** | **Job Management** | Ingestion, normalization, deduplication, and persistence. | Job entity, URL parser, deduplication hashing, search filters. *(Next)* |
 | **Phase 4** | **AI Job Analysis** | LLM abstraction, prompt versioning, scoring, and gap analysis. | `AIProvider`, `JobAnalyzerService`, match scoring algorithms. |
 | **Phase 5** | **Resume Engine** | Master resume, factual tailoring, and PDF compilation. | Resume versioning, section tailoring, PDF generator, grounding checks. |
 | **Phase 6** | **Angular Dashboard** | Rich desktop command center UI for end-to-end management. | Angular SPA, pipeline board, approval queue, analytics views. |

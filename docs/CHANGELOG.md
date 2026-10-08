@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - Phase 2: User Identity, Profile & Verified Skills - 2026-10-08
+
+### Added
+- **User Identity & JWT Authentication:** Implemented `User` domain entity, repository abstraction, and persistence adapter; implemented HMAC-SHA512 `JwtTokenService`, `JwtAuthenticationFilter`, and login authentication flow with BCrypt password hashing.
+- **Candidate Professional Profile:** Created `Profile` domain entity supporting phone, location, portfolio links, target roles, preferred locations, years of experience, notice period, and company designation.
+- **Skill Catalog & Normalized Uniqueness:** Created `Skill` domain entity and catalog management preventing duplicate skill variations via case-insensitive normalization.
+- **Anti-Hallucination Verified Skills Engine:** Created `UserSkill` domain entity strictly enforcing core principle 1 (truthfulness) where AI-suggested skills default to unverified (`verified = false`) until explicitly confirmed by the candidate.
+- **Database Schema Migration V2:** Created Flyway migration `V2__user_profile_skills.sql` declaring tables `users`, `profiles`, `profile_target_roles`, `profile_preferred_locations`, `skills`, and `user_skills` with foreign keys, indexes, and unique constraints.
+- **Integration & Unit Testing Suite:** Created 15 new automated tests covering JWT authentication, principal isolation, profile management, catalog search, anti-hallucination verification, and multi-tenant access control (39 tests total passing).
+
+---
+
 ## [0.2.0] - Phase 1: Backend Foundation - 2026-10-07
 
 ### Added
