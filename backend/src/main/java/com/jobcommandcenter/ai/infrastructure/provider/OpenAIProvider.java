@@ -3,6 +3,8 @@ package com.jobcommandcenter.ai.infrastructure.provider;
 import com.jobcommandcenter.ai.domain.AIJobAnalysisRequest;
 import com.jobcommandcenter.ai.domain.AIJobAnalysisResponse;
 import com.jobcommandcenter.ai.domain.AIProvider;
+import com.jobcommandcenter.ai.domain.AIResumeAnalysisRequest;
+import com.jobcommandcenter.ai.domain.AIResumeAnalysisResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +52,15 @@ public class OpenAIProvider implements AIProvider {
             throw new IllegalStateException("OpenAI API key is not configured");
         }
         log.info("Invoking OpenAI API for job: {}", request.jobId());
+        throw new UnsupportedOperationException("OpenAI remote calls disabled in test profile. Use MOCK provider.");
+    }
+
+    @Override
+    public AIResumeAnalysisResponse analyzeResumeFit(com.jobcommandcenter.ai.domain.AIResumeAnalysisRequest request) {
+        if (!isAvailable()) {
+            throw new IllegalStateException("OpenAI API key is not configured");
+        }
+        log.info("Invoking OpenAI API for resume fit: {}", request.resumeId());
         throw new UnsupportedOperationException("OpenAI remote calls disabled in test profile. Use MOCK provider.");
     }
 }

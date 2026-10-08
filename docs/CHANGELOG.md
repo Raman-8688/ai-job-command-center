@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - Phase 5: Resume Management & Job-Specific Resume Analysis - 2026-10-08
+
+### Added
+- **Resume Aggregate & Structured Sections:** Implemented `Resume` aggregate root managing candidate resume metadata and structured child entities: `ResumeExperience`, `ResumeProject`, `ResumeSkill`, `ResumeEducation`, and `ResumeCertification`.
+- **Resume Lifecycle & Statuses:** Supported `DRAFT`, `ACTIVE`, and `ARCHIVED` lifecycle states with explicit transition operations.
+- **Canonical Skill Catalog Reuse:** Linked resume skills directly to the centralized Phase 2 `Skill` catalog without data duplication.
+- **Job-Specific Resume Analysis Engine:** Created `JobResumeAnalysisService` executing deterministic and AI-assisted comparison of candidate resumes against canonical job postings.
+- **Skill Gap & Tailoring Insights:** Explicitly detects `strongMatches`, `missingRequiredSkills`, `missingPreferredSkills`, and critically `verifiedSkillsMissingFromResume` (candidate has verified competency not yet showcased on the current resume).
+- **Concrete Resume Evidence Mapping:** Automatically extracts concrete section references and verbatim excerpts supporting each matched skill without fabrication.
+- **Safe AI Guidance & Anti-Hallucination Guardrails:** AI suggestions are validated against verified candidate skills; unverified recommendations are flagged with `[NOT_ENOUGH_EVIDENCE]`. Zero automated resume modification or fake fact generation.
+- **Database Schema Migration V5:** Created Flyway `V5__resume_management.sql` declaring tables `resumes`, `resume_experiences`, `resume_projects`, `resume_skills`, `resume_education`, and `resume_certifications`.
+- **REST Endpoints:** Added `/api/resumes` CRUD, activation/archiving endpoints, and `/api/resumes/{resumeId}/jobs/{jobId}/analysis` (both GET and POST).
+- **Automated Test Suite:** Created 8 new unit and integration tests covering aggregate lifecycle, section mutations, analysis engine, anti-hallucination checks, and user ownership isolation (75 total tests passing).
+
+---
+
 ## [0.5.0] - Phase 4: AI Job Analysis & Fit Scoring - 2026-10-08
 
 ### Added

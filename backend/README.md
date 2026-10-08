@@ -53,6 +53,7 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
    - `V2__user_profile_skills.sql`: Initializes `users`, `profiles`, `profile_target_roles`, `profile_preferred_locations`, `skills`, and `user_skills`.
    - `V3__jobs_and_matching.sql`: Initializes `jobs`, `job_skills`, and `user_jobs`.
    - `V4__job_ai_analyses.sql`: Initializes `job_ai_analyses`, `job_ai_responsibilities`, `job_ai_technologies`, `job_ai_requirements`, and `job_ai_red_flags`.
+   - `V5__resume_management.sql`: Initializes `resumes`, `resume_experiences`, `resume_projects`, `resume_skills`, `resume_education`, and `resume_certifications`.
 4. Schema auto-creation (`ddl-auto=create/update`) is permanently disabled; Hibernate runs with `ddl-auto: validate`.
 
 ---
@@ -91,6 +92,17 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
 - `GET /api/jobs/{id}/ai-analysis`: Retrieve the latest completed AI analysis for a job
 - `GET /api/jobs/{id}/ai-analysis/history`: Retrieve full historical AI analysis runs for a job
 - `GET /api/jobs/{id}/ai-fit`: Calculate explainable fit evaluation layering AI gap analysis onto deterministic score
+
+### Resume Management & Analysis (Phase 5)
+- `POST /api/resumes`: Create new candidate resume in `DRAFT` status
+- `GET /api/resumes`: List all resumes belonging to authenticated candidate
+- `GET /api/resumes/{id}`: Retrieve complete resume with all structured sections
+- `PUT /api/resumes/{id}`: Update resume metadata and structured sections
+- `DELETE /api/resumes/{id}`: Delete resume
+- `POST /api/resumes/{id}/activate`: Activate resume
+- `POST /api/resumes/{id}/archive`: Archive resume
+- `GET /api/resumes/{resumeId}/jobs/{jobId}/analysis`: Evaluate resume fit against a job posting
+- `POST /api/resumes/{resumeId}/jobs/{jobId}/analysis`: Trigger/re-evaluate resume fit against job posting
 
 ---
 

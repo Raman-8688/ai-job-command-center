@@ -91,6 +91,63 @@ public class MockDeterministicAIProvider implements AIProvider {
     }
 
     @Override
+    public AIResumeAnalysisResponse analyzeResumeFit(AIResumeAnalysisRequest request) {
+        String jobTitle = request.jobTitle() != null ? request.jobTitle() : "Software Engineer";
+        String company = request.jobCompany() != null ? request.jobCompany() : "Target Company";
+        String resumeTitle = request.resumeTitle() != null ? request.resumeTitle() : "Candidate";
+
+        StringBuilder assessment = new StringBuilder();
+        assessment.append("Resume '").append(resumeTitle)
+                  .append("' demonstrates relevant background for the role of ")
+                  .append(jobTitle).append(" at ").append(company).append(". ");
+
+        List<String> resumeSkillsLower = request.resumeSkills().stream()
+            .map(s -> s.toLowerCase(Locale.ROOT))
+            .toList();
+
+        List<String> candidateVerifiedLower = request.candidateVerifiedSkills().stream()
+            .map(s -> s.toLowerCase(Locale.ROOT))
+            .toList();
+
+        List<String> suggestions = new ArrayList<>();
+        List<String> alignment = new ArrayList<>();
+
+        if (!request.resumeExperienceSummaries().isEmpty()) {
+            alignment.add("Work history demonstrates direct production experience relevant to core engineering duties.");
+        }
+        if (!request.resumeProjectSummaries().isEmpty()) {
+            alignment.add("Highlighted projects provide hands-on implementation evidence for system architecture.");
+        }
+
+        // Anti-hallucination check on missing skills
+        for (String reqSkill : request.jobRequiredSkills()) {
+            String reqLower = reqSkill.toLowerCase(Locale.ROOT);
+            boolean onResume = resumeSkillsLower.stream().anyMatch(s -> s.contains(reqLower) || reqLower.contains(s));
+            if (!onResume) {
+                boolean isVerified = candidateVerifiedLower.stream().anyMatch(s -> s.contains(reqLower) || reqLower.contains(s));
+                if (isVerified) {
+                    suggestions.add("Candidate has verified expertise in '" + reqSkill +
+                        "' which is required by " + company + " but currently omitted from this resume version. Recommend highlighting it.");
+                } else {
+                    suggestions.add("Required technology '" + reqSkill +
+                        "' is not represented on the resume. [NOT_ENOUGH_EVIDENCE] Candidate has no verified proof in skill profile; do not fabricate experience.");
+                }
+            }
+        }
+
+        if (suggestions.isEmpty()) {
+            suggestions.add("Resume covers all required technical competencies. Focus on quantifying business impact metrics in bullet points.");
+        }
+
+        return new AIResumeAnalysisResponse(
+            assessment.toString().trim(),
+            alignment,
+            suggestions,
+            new BigDecimal("0.92")
+        );
+    }
+
+    @Override
     public AIJobAnalysisResponse analyzeJob(AIJobAnalysisRequest request) {
         String description = request.rawDescription() != null ? request.rawDescription() : "";
         String title = request.title() != null ? request.title() : "";

@@ -12,6 +12,11 @@ public interface AIProvider {
     AIJobAnalysisResponse analyzeJob(AIJobAnalysisRequest request);
 
     /**
+     * Executes qualitative comparison between a structured resume and a job posting.
+     */
+    AIResumeAnalysisResponse analyzeResumeFit(AIResumeAnalysisRequest request);
+
+    /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).
      */
     String getProviderName();
