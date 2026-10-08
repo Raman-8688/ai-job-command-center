@@ -35,6 +35,8 @@ The application reads configuration from environment variables with safe develop
 | `DB_USERNAME` | `postgres` | Database username |
 | `DB_PASSWORD` | `postgres` | Database password |
 | `DB_URL` | Auto-derived from host/port/db | Full JDBC connection URL |
+| `APP_JWT_SECRET` | 64-char development key | HMAC-SHA512 signing key for JWT tokens |
+| `APP_JWT_EXPIRATION_MS` | `86400000` (24h) | JWT token expiration time in milliseconds |
 
 ---
 
@@ -46,12 +48,35 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
    ```sql
    CREATE DATABASE job_command_center;
    ```
-3. When the Spring Boot application boots with the `local` profile, Flyway automatically validates and applies all pending migrations (e.g., `V1__baseline.sql`).
+3. When the Spring Boot application boots with the `local` profile, Flyway automatically validates and applies all pending migrations:
+   - `V1__baseline.sql`: Initializes `system_metadata`.
+   - `V2__user_profile_skills.sql`: Initializes `users`, `profiles`, `profile_target_roles`, `profile_preferred_locations`, `skills`, and `user_skills`.
 4. Schema auto-creation (`ddl-auto=create/update`) is permanently disabled; Hibernate runs with `ddl-auto: validate`.
 
 ---
 
-## 5. Running the Backend Locally
+## 5. API Endpoints (Phase 2)
+
+### Authentication & Users
+- `POST /api/auth/login`: Authenticate email/password and obtain JWT Bearer token
+- `GET /api/users/me`: Current user identity details (Bearer authenticated)
+
+### Candidate Profile
+- `GET /api/profile`: Retrieve candidate profile (auto-initializes on first call)
+- `PUT /api/profile`: Update candidate professional profile
+
+### Skill Catalog & Candidate Skills
+- `GET /api/skills`: Search catalog skills (`?query=...&category=...`)
+- `GET /api/skills/{id}`: Retrieve catalog skill by ID
+- `POST /api/skills`: Register new standardized skill in catalog
+- `GET /api/profile/skills`: List candidate's claimed skills
+- `POST /api/profile/skills`: Add skill claim (Anti-hallucination: AI suggestions remain unverified)
+- `PUT /api/profile/skills/{id}`: Update skill claim / explicit verification
+- `DELETE /api/profile/skills/{id}`: Remove skill claim
+
+---
+
+## 6. Running the Backend Locally
 
 ```bash
 cd backend
@@ -70,7 +95,7 @@ Once started:
 
 ---
 
-## 6. Running Tests
+## 7. Running Tests
 
 The test suite runs hermetically and does not require active external services:
 
@@ -80,23 +105,24 @@ mvn clean test
 ```
 
 The test profile (`test`) uses an in-memory database with PostgreSQL dialect emulation and validates:
-- Flyway migration application
+- Flyway migrations (V1 and V2)
 - Actuator health probes and component status
 - Request correlation generation and header propagation
 - Centralized exception handling and RFC 7807 Problem Details
-- Security authorization rules (401 on protected endpoints, 200 on public)
+- User authentication, JWT issuance, and principal isolation
+- Profile CRUD and child collection persistence
+- Skill catalog normalization and anti-hallucination verification enforcement
 
-If a local PostgreSQL instance is running on port 5432, `PostgreSQLConnectionIntegrationTest` will also automatically verify connectivity against live PostgreSQL.
+If a local PostgreSQL instance is running on port 5432, `PostgreSQLConnectionIntegrationTest` will also automatically verify connectivity and migrations against live PostgreSQL.
 
 ---
 
-## 7. Observability & Logging
+## 8. Observability & Logging
 Every incoming request receives an `X-Correlation-ID`:
 - Injected into SLF4J MDC (`[req:<id>]`).
 - Returned to the client in HTTP response headers.
 - Included in RFC 7807 error responses for instant log triage.
 - Log pattern: `%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [req:%X{correlationId:-none}] - %msg%n`
-
 ---
 
 ## 8. Troubleshooting

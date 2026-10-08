@@ -211,10 +211,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex,
                                                                        HttpServletRequest request) {
+        String detail = (ex.getMessage() != null && !ex.getMessage().isBlank())
+            ? ex.getMessage()
+            : "Authentication is required to access this resource";
         ErrorResponse response = ErrorResponse.of(
             "Unauthorized",
             HttpStatus.UNAUTHORIZED.value(),
-            "Authentication is required to access this resource",
+            detail,
             request.getRequestURI(),
             CorrelationIdHolder.getCorrelationId()
         );
