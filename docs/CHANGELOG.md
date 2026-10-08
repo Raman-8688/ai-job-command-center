@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - Phase 3: Job Discovery, Normalization & Matching - 2026-10-08
+
+### Added
+- **Canonical Job Domain:** Implemented `Job` aggregate root preserving raw description as immutable source truth, with normalized `WorkMode`, `EmploymentType`, `JobSource`, and `JobStatus`.
+- **Deterministic Multi-Tier Deduplication:** Built duplicate prevention based on (source, externalJobId), canonical URL, and SHA-256 composite fingerprinting (`company|title|location`).
+- **Normalized Skill Requirements:** Implemented `JobSkill` connecting jobs to the central `Skill` catalog with strict `REQUIRED` vs `PREFERRED` qualification levels.
+- **Candidate Job Tracking (`UserJob`):** Established personal candidate interaction tracking (`DISCOVERED`, `SAVED`, `SHORTLISTED`, `IGNORED`, notes) while preserving data privacy.
+- **Deterministic Explainable Matching Engine:** Created `JobMatchingService` calculating 6-dimension fit scores (required skills, preferred skills, role title, experience, work mode, location) using verified candidate profile facts without LLM hallucinations.
+- **Explainability & Missing Skills Alerting:** Enforced core rule that missing required skills are prominently highlighted in match reasons and cannot be obscured by high overall scores.
+- **Database Schema Migration V3:** Created Flyway `V3__jobs_and_matching.sql` defining `jobs`, `job_skills`, and `user_jobs` with foreign keys, indexes, and unique constraints.
+- **REST Endpoints:** Added `/api/jobs` CRUD, multi-criteria filtering, pagination, match calculation (`/api/jobs/{id}/match`), and candidate status tracking.
+- **Automated Test Suite:** Created 17 new tests covering domain rules, deduplication, match calculations, edge cases, and API flows (56 total tests passing).
+
+---
+
 ## [0.3.0] - Phase 2: User Identity, Profile & Verified Skills - 2026-10-08
 
 ### Added

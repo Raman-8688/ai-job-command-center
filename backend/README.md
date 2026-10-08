@@ -51,11 +51,12 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
 3. When the Spring Boot application boots with the `local` profile, Flyway automatically validates and applies all pending migrations:
    - `V1__baseline.sql`: Initializes `system_metadata`.
    - `V2__user_profile_skills.sql`: Initializes `users`, `profiles`, `profile_target_roles`, `profile_preferred_locations`, `skills`, and `user_skills`.
+   - `V3__jobs_and_matching.sql`: Initializes `jobs`, `job_skills`, and `user_jobs`.
 4. Schema auto-creation (`ddl-auto=create/update`) is permanently disabled; Hibernate runs with `ddl-auto: validate`.
 
 ---
 
-## 5. API Endpoints (Phase 2)
+## 5. API Endpoints
 
 ### Authentication & Users
 - `POST /api/auth/login`: Authenticate email/password and obtain JWT Bearer token
@@ -73,6 +74,16 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
 - `POST /api/profile/skills`: Add skill claim (Anti-hallucination: AI suggestions remain unverified)
 - `PUT /api/profile/skills/{id}`: Update skill claim / explicit verification
 - `DELETE /api/profile/skills/{id}`: Remove skill claim
+
+### Job Discovery, Management & Matching (Phase 3)
+- `POST /api/jobs`: Ingest canonical job posting with required/preferred skills (deduplication enforced)
+- `GET /api/jobs`: Search and filter jobs (`query`, `status`, `source`, `workMode`, `company`, `location`, `page`, `size`)
+- `GET /api/jobs/{id}`: Retrieve canonical job details by ID with resolved skill names
+- `PUT /api/jobs/{id}`: Update job details, metadata, and skills
+- `DELETE /api/jobs/{id}`: Delete job posting
+- `GET /api/jobs/{id}/match`: Calculate deterministic 6-dimension match score against candidate verified profile
+- `GET /api/jobs/matches`: Calculate and list matches for all active jobs sorted by overall score
+- `PUT /api/jobs/{id}/user-status`: Update candidate interaction status (`DISCOVERED`, `SAVED`, `SHORTLISTED`, `IGNORED`)
 
 ---
 
