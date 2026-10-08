@@ -148,6 +148,115 @@ public class MockDeterministicAIProvider implements AIProvider {
     }
 
     @Override
+    public AITailoringResponse generateTailoringSuggestions(AITailoringRequest request) {
+        String jobTitle = request.jobTitle() != null && !request.jobTitle().isBlank() ? request.jobTitle() : "Software Engineer";
+        String company = request.jobCompanyName() != null && !request.jobCompanyName().isBlank() ? request.jobCompanyName() : "Target Company";
+        String resumeTitle = request.resumeTitle() != null && !request.resumeTitle().isBlank() ? request.resumeTitle() : "Software Engineer";
+        String tailoredTitle = jobTitle;
+
+        List<String> verifiedLower = request.candidateVerifiedSkills() != null
+            ? request.candidateVerifiedSkills().stream().map(s -> s.toLowerCase(Locale.ROOT)).toList()
+            : List.of();
+
+        List<String> matchedVerifiedSkills = new ArrayList<>();
+        List<String> missingUnverifiedSkills = new ArrayList<>();
+
+        if (request.requiredJobSkills() != null) {
+            for (String req : request.requiredJobSkills()) {
+                String reqLower = req.toLowerCase(Locale.ROOT);
+                if (verifiedLower.stream().anyMatch(v -> v.contains(reqLower) || reqLower.contains(v))) {
+                    matchedVerifiedSkills.add(req);
+                } else {
+                    missingUnverifiedSkills.add(req);
+                }
+            }
+        }
+
+        // 1. Build Tailored Summary
+        StringBuilder summaryBuilder = new StringBuilder();
+        summaryBuilder.append(jobTitle).append(" with proven background in building scalable distributed systems");
+        if (!matchedVerifiedSkills.isEmpty()) {
+            summaryBuilder.append(" specializing in ").append(String.join(", ", matchedVerifiedSkills));
+        }
+        summaryBuilder.append(". Tailored for ").append(company).append(".");
+        String tailoredSummary = summaryBuilder.toString();
+
+        List<AISuggestionItem> suggestions = new ArrayList<>();
+
+        // Summary Suggestion
+        suggestions.add(new AISuggestionItem(
+            "SUMMARY",
+            "Professional Summary",
+            request.resumeSummary() != null ? request.resumeSummary() : "",
+            tailoredSummary,
+            "Aligns executive summary directly with target position of " + jobTitle + " at " + company + " highlighting core verified competencies.",
+            matchedVerifiedSkills.isEmpty() ? "Candidate verified background" : "Verified skills: " + String.join(", ", matchedVerifiedSkills),
+            "VERIFIED"
+        ));
+
+        // Skills Suggestions
+        if (!matchedVerifiedSkills.isEmpty()) {
+            suggestions.add(new AISuggestionItem(
+                "SKILLS",
+                "Technical Skills Alignment",
+                "Existing skills order",
+                "Prioritize " + String.join(", ", matchedVerifiedSkills) + " in primary skills section.",
+                "Target job explicitly requires these competencies and candidate has proven verified proficiency.",
+                "Verified Candidate Skills: " + String.join(", ", matchedVerifiedSkills),
+                "VERIFIED"
+            ));
+        }
+
+        // Anti-hallucination warning for unverified skills
+        for (String unverified : missingUnverifiedSkills) {
+            suggestions.add(new AISuggestionItem(
+                "SKILLS",
+                "Job Requirement Gap: " + unverified,
+                "Not present",
+                "[NOT_ENOUGH_EVIDENCE] Job requires '" + unverified + "'. Candidate lacks verified evidence; do NOT fabricate experience. Prepare as an interview discussion topic or self-study.",
+                "Target job lists '" + unverified + "' but candidate has no verified proof.",
+                "None (Unverified)",
+                "NOT_ENOUGH_EVIDENCE"
+            ));
+        }
+
+        // Experience Suggestions
+        if (request.experiences() != null && !request.experiences().isEmpty()) {
+            String firstExp = request.experiences().get(0);
+            suggestions.add(new AISuggestionItem(
+                "EXPERIENCE",
+                "Recent Professional Experience",
+                firstExp,
+                "Emphasize scalable architecture and production outcomes aligned with " + company + "'s technical stack.",
+                "Highlights high-impact engineering accomplishments relevant to target role.",
+                "Work history in candidate master resume",
+                "VERIFIED"
+            ));
+        }
+
+        // Project Suggestions
+        if (request.projects() != null && !request.projects().isEmpty()) {
+            String firstProj = request.projects().get(0);
+            suggestions.add(new AISuggestionItem(
+                "PROJECT",
+                "Key Engineering Projects",
+                firstProj,
+                "Highlight architectural decisions, concurrency handling, and technical trade-offs relevant to " + jobTitle + ".",
+                "Demonstrates practical hands-on system building capability.",
+                "Project records in candidate master resume",
+                "VERIFIED"
+            ));
+        }
+
+        return new AITailoringResponse(
+            tailoredTitle,
+            tailoredSummary,
+            suggestions,
+            new BigDecimal("0.95")
+        );
+    }
+
+    @Override
     public AIJobAnalysisResponse analyzeJob(AIJobAnalysisRequest request) {
         String description = request.rawDescription() != null ? request.rawDescription() : "";
         String title = request.title() != null ? request.title() : "";

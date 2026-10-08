@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - Phase 6: Resume Tailoring, Versioning & Job-Specific Resume Workflow - 2026-10-08
+
+### Added
+- **Tailored Resume Aggregate & Section Suggestions:** Implemented `TailoredResume` aggregate root and `TailoredResumeSuggestion` entities linking tailored drafts to master resumes and target jobs.
+- **Master Resume Immutability:** Strict architectural enforcement ensuring master template resumes in `resumes` table are never modified during tailoring.
+- **Resume Versioning Lineage:** Automated version sequencing per `(source_resume_id, target_job_id)` with unique database constraint `uq_tailored_resume_version`.
+- **Deterministic Keyword Coverage:** Computes keyword coverage score and tracks matched vs missing requirements against verified candidate skills and resume content.
+- **Anti-Hallucination Recommendation Engine:** Section-level suggestions (`SUMMARY`, `SKILLS`, `EXPERIENCE`, `PROJECT`) grounded in verified candidate skills; missing requirements are strictly labeled `[NOT_ENOUGH_EVIDENCE]` with zero invented work history.
+- **Human Review Workflow:** Enforces review lifecycle (`DRAFT` -> `UNDER_REVIEW` -> `APPROVED` / `REJECTED`) with suggestion application support.
+- **Database Schema Migration V6:** Created Flyway `V6__resume_tailoring.sql` declaring `tailored_resumes` and `tailored_resume_suggestions` tables with indices.
+- **REST Endpoints:** Added `/api/resumes/{resumeId}/tailor/{jobId}`, `/api/resumes/{resumeId}/tailored`, `/api/jobs/{jobId}/tailored-resumes`, `/api/tailored-resumes/{id}`, `/api/tailored-resumes/{id}/status`, and `/api/tailored-resumes/{id}/suggestions/{sugId}/apply`.
+- **Angular 18 Tailoring Workbench:** Built interactive `TailoredResumeWorkbenchComponent`, `ResumeTailoringService`, keyword coverage progress meters, section suggestions cards with diffs, and review controls.
+- **Test Suite:** 81 tests passing with 0 failures and 0 errors across unit, integration, and security layers.
+
+---
+
 ## [0.6.0] - Phase 5: Resume Management & Job-Specific Resume Analysis - 2026-10-08
 
 ### Added

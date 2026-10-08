@@ -1,9 +1,13 @@
 <main class="command-center-container">
-  <header class="header">
-    <h1>{{ title }}</h1>
+  <header class="navbar">
+    <div class="brand">
+      <span class="brand-icon">⚡</span>
+      <h1>{{ title }}</h1>
+    </div>
     <span class="badge">{{ status }}</span>
   </header>
-  <section class="foundation-card">
-    <p>Modular Monolith application foundation verified. Standby for Phase 1 backend implementation.</p>
+
+  <section class="workbench-wrapper">
+    <app-tailored-resume-workbench></app-tailored-resume-workbench>
   </section>
 </main>

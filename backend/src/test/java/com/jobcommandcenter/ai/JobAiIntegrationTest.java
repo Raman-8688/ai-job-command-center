@@ -76,7 +76,14 @@ class JobAiIntegrationTest {
         jdbcTemplate.execute("DELETE FROM job_ai_analyses");
         jdbcTemplate.execute("DELETE FROM user_jobs");
         jdbcTemplate.execute("DELETE FROM job_skills");
-        jdbcTemplate.execute("DELETE FROM jobs");
+        jdbcTemplate.execute("DELETE FROM tailored_resume_suggestions");
+        jdbcTemplate.execute("DELETE FROM tailored_resumes");
+        jdbcTemplate.execute("DELETE FROM resume_skills");
+        jdbcTemplate.execute("DELETE FROM resume_experiences");
+        jdbcTemplate.execute("DELETE FROM resume_projects");
+        jdbcTemplate.execute("DELETE FROM resume_education");
+        jdbcTemplate.execute("DELETE FROM resume_certifications");
+        jdbcTemplate.execute("DELETE FROM resumes");
         jdbcTemplate.execute("DELETE FROM user_skills");
         jdbcTemplate.execute("DELETE FROM skills");
         jdbcTemplate.execute("DELETE FROM profile_target_roles");
