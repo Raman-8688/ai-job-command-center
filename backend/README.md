@@ -52,6 +52,7 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
    - `V1__baseline.sql`: Initializes `system_metadata`.
    - `V2__user_profile_skills.sql`: Initializes `users`, `profiles`, `profile_target_roles`, `profile_preferred_locations`, `skills`, and `user_skills`.
    - `V3__jobs_and_matching.sql`: Initializes `jobs`, `job_skills`, and `user_jobs`.
+   - `V4__job_ai_analyses.sql`: Initializes `job_ai_analyses`, `job_ai_responsibilities`, `job_ai_technologies`, `job_ai_requirements`, and `job_ai_red_flags`.
 4. Schema auto-creation (`ddl-auto=create/update`) is permanently disabled; Hibernate runs with `ddl-auto: validate`.
 
 ---
@@ -84,6 +85,12 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
 - `GET /api/jobs/{id}/match`: Calculate deterministic 6-dimension match score against candidate verified profile
 - `GET /api/jobs/matches`: Calculate and list matches for all active jobs sorted by overall score
 - `PUT /api/jobs/{id}/user-status`: Update candidate interaction status (`DISCOVERED`, `SAVED`, `SHORTLISTED`, `IGNORED`)
+
+### AI Job Analysis & Fit Scoring (Phase 4)
+- `POST /api/jobs/{id}/ai-analysis`: Trigger AI analysis for a job posting (increments version)
+- `GET /api/jobs/{id}/ai-analysis`: Retrieve the latest completed AI analysis for a job
+- `GET /api/jobs/{id}/ai-analysis/history`: Retrieve full historical AI analysis runs for a job
+- `GET /api/jobs/{id}/ai-fit`: Calculate explainable fit evaluation layering AI gap analysis onto deterministic score
 
 ---
 

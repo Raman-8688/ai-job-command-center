@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - Phase 4: AI Job Analysis & Fit Scoring - 2026-10-08
+
+### Added
+- **AI Analysis Domain & Aggregates:** Implemented `JobAiAnalysis` aggregate root with status lifecycle (`PENDING`, `COMPLETED`, `FAILED`), versioning per job, confidence rating, technology categorization, core/inferred responsibilities, and red flag warnings.
+- **Source Truth Immutability:** Enforced architectural rule that canonical job description remains immutable source truth; AI analysis is an explicitly derived entity that never overwrites canonical job text.
+- **Anti-Hallucination Grounding:** Enforced candidate skill grounding where only verified skills (`isVerified() == true`) count as possessed skills; AI cannot verify candidate skills or invent competencies.
+- **Provider-Independent SPI (`AIProvider`):** Implemented `AIProvider` SPI with `MockDeterministicAIProvider` (offline-safe NLP & keyword analysis), `OpenAIProvider` stub, and `AIProviderFactory` for pluggable provider configuration.
+- **Layered Explainable Fit Scoring (`JobAiFitService`):** Combined deterministic Phase 3 match score with AI qualitative technology gap categorization (`matched`, `missing required`, `missing preferred`), interview prep talking points, and qualitative fit tiers (`STRONG_MATCH`, `MODERATE_MATCH`, `WEAK_MATCH`).
+- **Database Schema Migration V4:** Created Flyway `V4__job_ai_analyses.sql` declaring tables `job_ai_analyses`, `job_ai_responsibilities`, `job_ai_technologies`, `job_ai_requirements`, and `job_ai_red_flags`.
+- **REST Endpoints:** Added `/api/jobs/{id}/ai-analysis` (POST to analyze/re-analyze, GET for latest, GET /history) and `/api/jobs/{id}/ai-fit` (GET explainable candidate fit).
+- **Automated Test Suite:** Created 11 new tests across mock provider, versioning, failure isolation, anti-hallucination fit evaluation, and HTTP security/endpoints (67 total tests passing).
+
+---
+
 ## [0.4.0] - Phase 3: Job Discovery, Normalization & Matching - 2026-10-08
 
 ### Added
