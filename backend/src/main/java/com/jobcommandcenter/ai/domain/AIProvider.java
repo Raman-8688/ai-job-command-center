@@ -17,6 +17,11 @@ public interface AIProvider {
     AIResumeAnalysisResponse analyzeResumeFit(AIResumeAnalysisRequest request);
 
     /**
+     * Generates section-level resume tailoring suggestions based on job requirements and verified skills.
+     */
+    AITailoringResponse generateTailoringSuggestions(AITailoringRequest request);
+
+    /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).
      */
     String getProviderName();

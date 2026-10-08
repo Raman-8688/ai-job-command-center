@@ -61,6 +61,10 @@ class SkillAndAntiHallucinationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM tailored_resume_suggestions");
+        jdbcTemplate.execute("DELETE FROM tailored_resumes");
+        jdbcTemplate.execute("DELETE FROM resume_skills");
+        jdbcTemplate.execute("DELETE FROM job_skills");
         jdbcTemplate.execute("DELETE FROM user_skills");
         jdbcTemplate.execute("DELETE FROM skills");
         jdbcTemplate.execute("DELETE FROM profile_target_roles");

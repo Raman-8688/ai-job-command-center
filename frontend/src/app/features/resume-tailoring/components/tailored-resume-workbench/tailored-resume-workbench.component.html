@@ -1,0 +1,187 @@
+<div class="workbench-container">
+  <!-- Top Navigation & Action Banner -->
+  <header class="workbench-header">
+    <div class="title-meta">
+      <div class="breadcrumb">
+        <span>Master Resume</span> &gt;
+        <span class="active-job">Target Job: {{ activeDraft?.targetJobId || 'Pending' }}</span>
+      </div>
+      <h2>{{ activeDraft?.tailoredTitle || 'Resume Tailoring Workbench' }}</h2>
+    </div>
+
+    <div class="header-status-group" *ngIf="activeDraft">
+      <span class="version-chip">v{{ activeDraft.version }}</span>
+      <span class="status-chip" [ngClass]="'status-' + activeDraft.status.toLowerCase()">
+        {{ activeDraft.status }}
+      </span>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div *ngIf="statusMessage" class="status-banner" [ngClass]="{'banner-error': isError, 'banner-success': !isError}">
+    {{ statusMessage }}
+  </div>
+
+  <!-- Initiation Controls Bar -->
+  <section class="controls-panel">
+    <div class="input-group">
+      <label for="resumeId">Source Master Resume ID:</label>
+      <input id="resumeId" [(ngModel)]="targetResumeId" placeholder="UUID of Master Resume" />
+    </div>
+
+    <div class="input-group">
+      <label for="jobId">Target Job ID:</label>
+      <input id="jobId" [(ngModel)]="targetJobId" placeholder="UUID of Target Job" />
+    </div>
+
+    <button class="btn btn-primary" (click)="createTailoringDraft()" [disabled]="loading">
+      <span *ngIf="!loading">🚀 Generate Tailored Draft</span>
+      <span *ngIf="loading">Generating AI Analysis...</span>
+    </button>
+  </section>
+
+  <div class="main-layout" *ngIf="activeDraft">
+    <!-- Left Column: Coverage & Suggestions -->
+    <div class="analysis-column">
+      <!-- Keyword Coverage Widget -->
+      <div class="card coverage-card">
+        <div class="card-header">
+          <h3>Keyword Coverage & Skill Match</h3>
+          <span class="score-display">{{ activeDraft.keywordCoverageScore }}%</span>
+        </div>
+
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" [style.width.%]="activeDraft.keywordCoverageScore"></div>
+        </div>
+
+        <div class="keywords-breakdown">
+          <div class="keyword-section">
+            <h4>✅ Matched Skills & Keywords ({{ activeDraft.matchedKeywords.length }})</h4>
+            <div class="tag-cloud">
+              <span class="tag tag-matched" *ngFor="let kw of activeDraft.matchedKeywords">{{ kw }}</span>
+              <span class="empty-hint" *ngIf="activeDraft.matchedKeywords.length === 0">No direct matches detected.</span>
+            </div>
+          </div>
+
+          <div class="keyword-section">
+            <h4>⚠️ Missing Requirements ({{ activeDraft.missingKeywords.length }})</h4>
+            <div class="tag-cloud">
+              <span class="tag tag-missing" *ngFor="let kw of activeDraft.missingKeywords">{{ kw }}</span>
+              <span class="empty-hint" *ngIf="activeDraft.missingKeywords.length === 0">Complete keyword coverage achieved!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Suggestions Deck -->
+      <div class="card suggestions-card">
+        <div class="card-header">
+          <h3>Section-Level Tailoring Recommendations</h3>
+          <div class="filter-tabs">
+            <button [class.active]="selectedFilter === 'ALL'" (click)="selectedFilter = 'ALL'">All</button>
+            <button [class.active]="selectedFilter === 'SUMMARY'" (click)="selectedFilter = 'SUMMARY'">Summary</button>
+            <button [class.active]="selectedFilter === 'SKILLS'" (click)="selectedFilter = 'SKILLS'">Skills</button>
+            <button [class.active]="selectedFilter === 'EXPERIENCE'" (click)="selectedFilter = 'EXPERIENCE'">Experience</button>
+            <button [class.active]="selectedFilter === 'PROJECT'" (click)="selectedFilter = 'PROJECT'">Project</button>
+          </div>
+        </div>
+
+        <div class="suggestions-list">
+          <div class="suggestion-item" *ngFor="let sug of filteredSuggestions" [class.suggestion-applied]="sug.applied">
+            <div class="sug-header">
+              <div class="sug-meta">
+                <span class="badge section-badge">{{ sug.sectionType }}</span>
+                <span class="sug-title">{{ sug.targetItemTitle }}</span>
+              </div>
+              <span class="badge status-badge"
+                    [class.badge-verified]="sug.verificationStatus === 'VERIFIED'"
+                    [class.badge-gap]="sug.verificationStatus !== 'VERIFIED'">
+                {{ sug.verificationStatus }}
+              </span>
+            </div>
+
+            <div class="sug-body">
+              <div class="diff-block" *ngIf="sug.originalContent">
+                <span class="diff-label">Original:</span>
+                <p class="diff-text original-text">{{ sug.originalContent }}</p>
+              </div>
+
+              <div class="diff-block">
+                <span class="diff-label">Recommendation:</span>
+                <p class="diff-text suggested-text">{{ sug.suggestedContent }}</p>
+              </div>
+
+              <div class="sug-rationale">
+                <strong>Why this change:</strong> {{ sug.rationale }}
+              </div>
+
+              <div class="sug-evidence" *ngIf="sug.evidence">
+                <strong>Factual Evidence:</strong> {{ sug.evidence }}
+              </div>
+            </div>
+
+            <div class="sug-actions">
+              <button class="btn btn-outline"
+                      [disabled]="sug.applied || sug.verificationStatus === 'NOT_ENOUGH_EVIDENCE'"
+                      (click)="applySuggestion(sug)">
+                {{ sug.applied ? '✓ Applied' : 'Apply to Draft' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Draft Editor & Review Workflow -->
+    <div class="review-column">
+      <div class="card editor-card">
+        <div class="card-header">
+          <h3>Human Review & Draft Customization</h3>
+        </div>
+
+        <div class="form-group">
+          <label for="tailoredTitle">Targeted Role Title:</label>
+          <input id="tailoredTitle" [(ngModel)]="editedTitle" />
+        </div>
+
+        <div class="form-group">
+          <label for="tailoredSummary">Tailored Executive Summary:</label>
+          <textarea id="tailoredSummary" rows="6" [(ngModel)]="editedSummary"></textarea>
+        </div>
+
+        <div class="editor-actions">
+          <button class="btn btn-secondary" (click)="saveContentChanges()" [disabled]="loading">
+            💾 Save Draft Edits
+          </button>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="workflow-actions-panel">
+          <h4>Review Decision Workflow</h4>
+          <p class="help-text">Review the draft carefully. Factual accuracy is guaranteed only by candidate sign-off.</p>
+
+          <div class="action-buttons-row">
+            <button class="btn btn-review"
+                    [disabled]="activeDraft.status === 'UNDER_REVIEW'"
+                    (click)="changeStatus('UNDER_REVIEW')">
+              Submit for Review
+            </button>
+
+            <button class="btn btn-approve"
+                    [disabled]="activeDraft.status === 'APPROVED'"
+                    (click)="changeStatus('APPROVED')">
+              ✓ Approve Draft
+            </button>
+
+            <button class="btn btn-reject"
+                    [disabled]="activeDraft.status === 'REJECTED'"
+                    (click)="changeStatus('REJECTED')">
+              ✕ Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

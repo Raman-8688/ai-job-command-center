@@ -54,6 +54,7 @@ Database migrations are strictly version-controlled with **Flyway** in `src/main
    - `V3__jobs_and_matching.sql`: Initializes `jobs`, `job_skills`, and `user_jobs`.
    - `V4__job_ai_analyses.sql`: Initializes `job_ai_analyses`, `job_ai_responsibilities`, `job_ai_technologies`, `job_ai_requirements`, and `job_ai_red_flags`.
    - `V5__resume_management.sql`: Initializes `resumes`, `resume_experiences`, `resume_projects`, `resume_skills`, `resume_education`, and `resume_certifications`.
+   - `V6__resume_tailoring.sql`: Initializes `tailored_resumes` and `tailored_resume_suggestions`.
 4. Schema auto-creation (`ddl-auto=create/update`) is permanently disabled; Hibernate runs with `ddl-auto: validate`.
 
 ---
