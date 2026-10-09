@@ -716,3 +716,174 @@ Cross-Origin Resource Sharing (CORS) is enabled for `http://localhost:4200` with
 * **Success Status:** `201 Created`
 * **Request Body:** `SavePrepQuestionRequest`
 
+
+---
+
+## 9. Online Assessments & Company Technical Dossiers (Phase 10)
+
+### 9.1 Create Online Assessment
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments`
+* **Auth:** Bearer JWT required
+* **Success Status:** `201 Created`
+* **Request Body:**
+  ```json
+  {
+    "jobId": "3f3984a2-1731-4df8-9186-353f64998965",
+    "applicationId": "Optional UUID",
+    "interviewId": "Optional UUID",
+    "platform": "HACKERRANK",
+    "customPlatform": null,
+    "title": "HackerRank SWE Assessment",
+    "assessmentUrl": "https://hackerrank.com/tests/12345",
+    "status": "RECEIVED",
+    "result": "PENDING",
+    "invitedAt": "2026-10-10T12:00:00Z",
+    "deadlineAt": "2026-10-15T12:00:00Z",
+    "durationMinutes": 90,
+    "proctored": true,
+    "notes": "Covers data structures and concurrency"
+  }
+  ```
+* **Response Body:** `OnlineAssessmentResponse`
+
+### 9.2 List Online Assessments with Filters
+* **Method:** `GET`
+* **Endpoint:** `/api/assessments`
+* **Query Parameters:**
+  * `status` (optional): Filter by `OnlineAssessmentStatus` (`RECEIVED`, `IN_PROGRESS`, `SUBMITTED`, `EXPIRED`, `ABANDONED`)
+  * `platform` (optional): Filter by `AssessmentPlatform` (`HACKERRANK`, `CODE_SIGNAL`, `LEETCODE`, `CUSTOM`, etc.)
+  * `jobId` (optional): Filter by associated `UUID` job
+  * `applicationId` (optional): Filter by associated `UUID` application
+  * `expiringWithinHours` (optional): Filter assessments expiring within next N hours
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** Array of `OnlineAssessmentSummaryResponse`
+
+### 9.3 Get Assessment Dashboard Summary
+* **Method:** `GET`
+* **Endpoint:** `/api/assessments/dashboard-summary`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:**
+  ```json
+  {
+    "totalAssessments": 12,
+    "pendingCount": 4,
+    "inProgressCount": 2,
+    "submittedCount": 5,
+    "passedCount": 4,
+    "failedCount": 1,
+    "averageScore": 86.5,
+    "upcomingDeadlines": [ ...OnlineAssessmentSummaryResponse... ]
+  }
+  ```
+
+### 9.4 Get Online Assessment by ID
+* **Method:** `GET`
+* **Endpoint:** `/api/assessments/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `OnlineAssessmentResponse` (includes active study checklist items)
+
+### 9.5 Update Online Assessment Metadata
+* **Method:** `PUT`
+* **Endpoint:** `/api/assessments/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `UpdateAssessmentRequest` (`title`, `assessmentUrl`, `deadlineAt`, `durationMinutes`, `proctored`, `notes`, `expectedVersion`)
+
+### 9.6 Start Online Assessment
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/start`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `StartAssessmentRequest` (`startedAt`, `notes`, `expectedVersion`)
+
+### 9.7 Submit Online Assessment
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/submit`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `SubmitAssessmentRequest` (`submittedAt`, `notes`, `expectedVersion`)
+
+### 9.8 Record Online Assessment Result
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/result`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "result": "PASSED",
+    "score": 92.5,
+    "maxScore": 100.0,
+    "notes": "Passed all algorithmic test cases",
+    "expectedVersion": 2
+  }
+  ```
+
+### 9.9 Extend Online Assessment Deadline
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/extend`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `ExtendAssessmentDeadlineRequest` (`newDeadlineAt`, `reason`, `expectedVersion`)
+
+### 9.10 Abandon Online Assessment
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/abandon`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `AbandonAssessmentRequest` (`reason`, `expectedVersion`)
+
+### 9.11 Expire Online Assessment
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/expire`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `ExpireAssessmentRequest` (`notes`, `expectedVersion`)
+
+### 9.12 Get Assessment Event History
+* **Method:** `GET`
+* **Endpoint:** `/api/assessments/{id}/events`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** Array of `OnlineAssessmentEventResponse` ordered chronologically by `occurredAt`.
+
+### 9.13 Get Assessment Study Checklist
+* **Method:** `GET`
+* **Endpoint:** `/api/assessments/{id}/checklist`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `AssessmentChecklistBundleResponse` (total, completed, completionPercentage, items)
+
+### 9.14 Toggle Assessment Study Checklist Item Completion
+* **Method:** `PATCH`
+* **Endpoint:** `/api/assessments/{id}/checklist/{itemId}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `ToggleChecklistItemRequest` (`completed`, `expectedVersion`)
+
+### 9.15 Generate Grounded AI Assessment Briefing
+* **Method:** `POST`
+* **Endpoint:** `/api/assessments/{id}/briefing`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `GenerateBriefingRequest` (`forceRefresh`, `expectedVersion`)
+* **Response Body:** `AssessmentBriefingResponse`
+
+### 9.16 Get Company Technical Dossier
+* **Method:** `GET`
+* **Endpoint:** `/api/intel/jobs/{jobId}/company-dossier`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `CompanyDossierResponse`
+
+### 9.17 Generate Grounded AI Company Technical Dossier
+* **Method:** `POST`
+* **Endpoint:** `/api/intel/jobs/{jobId}/company-dossier`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `GenerateCompanyDossierRequest` (`forceRefresh`)
+* **Response Body:** `CompanyDossierResponse`

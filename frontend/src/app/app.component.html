@@ -7,6 +7,18 @@
     <div class="nav-tabs">
       <button
         class="tab-btn"
+        [class.active]="activeTab === 'assessments'"
+        (click)="activeTab = 'assessments'">
+        ⏱️ Online Assessments
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'company-intel'"
+        (click)="activeTab = 'company-intel'">
+        🏢 Company Intel
+      </button>
+      <button
+        class="tab-btn"
         [class.active]="activeTab === 'interviews'"
         (click)="activeTab = 'interviews'">
         📅 Interview Cockpit
@@ -34,6 +46,16 @@
   </header>
 
   <section class="workbench-wrapper">
+    <app-assessment-tracker
+      *ngIf="activeTab === 'assessments'"
+      (openCompanyIntel)="navigateToCompanyIntel($event)">
+    </app-assessment-tracker>
+
+    <app-company-dossier
+      *ngIf="activeTab === 'company-intel'"
+      [initialJobId]="selectedJobIdForIntel">
+    </app-company-dossier>
+
     <app-interview-cockpit
       *ngIf="activeTab === 'interviews'"
       (openPrep)="navigateToPrep($event)">

@@ -41,6 +41,16 @@ public interface AIProvider {
      */
     AIInterviewPrepResponse generateInterviewPrep(AIInterviewPrepRequest request);
 
+    /**
+     * Generates grounded online assessment briefings, time-management strategies, and study checklists.
+     */
+    AIAssessmentBriefingResponse generateAssessmentBriefing(AIAssessmentBriefingRequest request);
+
+    /**
+     * Generates grounded company technical dossiers, architectural context, and interviewer questions.
+     */
+    AICompanyDossierResponse generateCompanyDossier(AICompanyDossierRequest request);
+
 
     /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).

@@ -1,0 +1,618 @@
+<div class="oa-container">
+
+  <!-- Header & Primary Actions -->
+  <header class="oa-header">
+    <div class="header-left">
+      <h2 class="oa-title">Online Assessment (OA) Tracker</h2>
+      <p class="oa-subtitle">Track deadlines, practice checklists, grounded AI prep briefings & event audit trails</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="loadAllData()">
+        <span>🔄</span> Refresh
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <span>+</span> Register Assessment
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>✅</span> {{ successMessage }}
+  </div>
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    <span>⚠️</span> {{ errorMessage }}
+  </div>
+
+  <!-- Metric KPI Cards -->
+  <div class="kpi-grid" *ngIf="summary">
+    <div class="kpi-card">
+      <div class="kpi-icon icon-blue">📋</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Registered</span>
+        <span class="kpi-value">{{ summary.totalAssessments }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-purple">📥</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Invited / Received</span>
+        <span class="kpi-value">{{ summary.invited }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-amber">⚙️</div>
+      <div class="kpi-info">
+        <span class="kpi-label">In Progress</span>
+        <span class="kpi-value">{{ summary.inProgress }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-green">✅</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Submitted</span>
+        <span class="kpi-value">{{ summary.submitted }}</span>
+      </div>
+    </div>
+    <div class="kpi-card" [class.urgent]="summary.dueSoon > 0">
+      <div class="kpi-icon icon-orange">⏰</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Due Soon (< 24h)</span>
+        <span class="kpi-value">{{ summary.dueSoon }}</span>
+      </div>
+    </div>
+    <div class="kpi-card" [class.danger]="summary.overdue > 0">
+      <div class="kpi-icon icon-red">⚠️</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Overdue</span>
+        <span class="kpi-value">{{ summary.overdue }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar: Search and Filter Chips -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (input)="applyFilter()"
+        placeholder="Filter by title, company, role, or platform..."
+        class="search-input" />
+    </div>
+
+    <div class="filter-group">
+      <div class="status-chips">
+        <button class="filter-chip" [class.active]="selectedStatus === 'ALL'" (click)="selectedStatus = 'ALL'; loadAssessments()">All</button>
+        <button class="filter-chip" [class.active]="selectedStatus === 'INVITED'" (click)="selectedStatus = 'INVITED'; loadAssessments()">Invited</button>
+        <button class="filter-chip" [class.active]="selectedStatus === 'IN_PROGRESS'" (click)="selectedStatus = 'IN_PROGRESS'; loadAssessments()">In Progress</button>
+        <button class="filter-chip" [class.active]="selectedStatus === 'SUBMITTED'" (click)="selectedStatus = 'SUBMITTED'; loadAssessments()">Submitted</button>
+        <button class="filter-chip" [class.active]="selectedStatus === 'EXPIRED'" (click)="selectedStatus = 'EXPIRED'; loadAssessments()">Expired</button>
+      </div>
+
+      <div class="platform-select-wrap">
+        <select [(ngModel)]="selectedPlatform" (change)="loadAssessments()" class="form-control-compact">
+          <option value="ALL">All Platforms</option>
+          <option *ngFor="let p of platforms" [value]="p.value">{{ p.label }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Layout (List + Workspace Drawer) -->
+  <div class="main-layout" [class.drawer-open]="selectedAssessment !== null">
+
+    <!-- Assessment Cards Grid -->
+    <div class="assessments-list-column">
+      <div class="loading-state" *ngIf="loadingList">
+        <div class="spinner"></div>
+        <p>Loading online assessments...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!loadingList && filteredAssessments.length === 0">
+        <div class="empty-icon">📂</div>
+        <h3>No assessments found</h3>
+        <p>Register an online assessment or change your filters to see active invitations.</p>
+        <button class="btn btn-primary" (click)="openCreateModal()">Register First Assessment</button>
+      </div>
+
+      <div class="cards-grid" *ngIf="!loadingList && filteredAssessments.length > 0">
+        <div
+          class="oa-card"
+          *ngFor="let oa of filteredAssessments"
+          [class.selected]="selectedAssessment?.id === oa.id"
+          [class.card-overdue]="isOverdue(oa.expiresAt) && oa.status !== 'SUBMITTED'"
+          [class.card-due-soon]="isDueSoon(oa.expiresAt) && oa.status !== 'SUBMITTED'">
+
+          <div class="card-header">
+            <div class="badge-row">
+              <span class="platform-tag">{{ oa.platform }}</span>
+              <span class="status-tag status-{{ oa.status.toLowerCase() }}">{{ oa.status }}</span>
+              <span class="result-tag result-{{ oa.result.toLowerCase() }}" *ngIf="oa.result !== 'PENDING'">{{ oa.result }}</span>
+            </div>
+            <h3 class="card-title" (click)="selectAssessment(oa.id)">{{ oa.title }}</h3>
+            <p class="company-role" *ngIf="oa.companyName || oa.jobTitle">
+              <span class="company-name">{{ oa.companyName || 'Target Company' }}</span>
+              <span class="role-separator" *ngIf="oa.jobTitle"> • </span>
+              <span class="job-title" *ngIf="oa.jobTitle">{{ oa.jobTitle }}</span>
+            </p>
+          </div>
+
+          <div class="card-meta">
+            <div class="meta-item" *ngIf="oa.durationMinutes">
+              <span class="meta-icon">⏳</span>
+              <span>{{ oa.durationMinutes }} mins</span>
+            </div>
+            <div class="meta-item deadline-item" [class.urgent-text]="isDueSoon(oa.expiresAt) || isOverdue(oa.expiresAt)">
+              <span class="meta-icon">⏰</span>
+              <span>Expires: {{ formatDate(oa.expiresAt) }}</span>
+            </div>
+          </div>
+
+          <!-- Study Checklist Progress Mini Bar -->
+          <div class="progress-box" (click)="selectAssessment(oa.id)">
+            <div class="progress-labels">
+              <span class="progress-title">Study Checklist</span>
+              <span class="progress-stat">{{ oa.checklistCompletionPercentage }}% ({{ oa.totalChecklistItems }} items)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="oa.checklistCompletionPercentage"></div>
+            </div>
+          </div>
+
+          <!-- Card Actions -->
+          <div class="card-actions">
+            <button class="action-btn action-primary" (click)="selectAssessment(oa.id)">
+              <span>🧠</span> Prep Workspace
+            </button>
+            <button class="action-btn" *ngIf="canStart(oa.status)" (click)="openStartModal(oa)">
+              <span>▶️</span> Start
+            </button>
+            <button class="action-btn" *ngIf="canSubmit(oa.status)" (click)="openSubmitModal(oa)">
+              <span>📤</span> Submit
+            </button>
+            <button class="action-btn" *ngIf="canRecordResult(oa.status)" (click)="openResultModal(oa)">
+              <span>🏆</span> Outcome
+            </button>
+            <button class="action-btn" *ngIf="canExtend(oa.status)" (click)="openExtendModal(oa)">
+              <span>⏱️</span> Extend
+            </button>
+            <button class="action-btn action-intel" (click)="goToCompanyIntel(oa.jobId)">
+              <span>🏢</span> Dossier
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Workspace Drawer: Grounded AI Briefing, Checklist & Audit Events -->
+    <aside class="workspace-drawer" *ngIf="selectedAssessment">
+      <div class="drawer-header">
+        <div class="drawer-title-wrap">
+          <div class="badge-row">
+            <span class="platform-tag">{{ selectedAssessment.platform }}</span>
+            <span class="status-tag status-{{ selectedAssessment.status.toLowerCase() }}">{{ selectedAssessment.status }}</span>
+          </div>
+          <h2 class="drawer-title">{{ selectedAssessment.title }}</h2>
+          <p class="drawer-subtitle">
+            {{ selectedAssessment.companyName }} • {{ selectedAssessment.jobTitle }}
+          </p>
+        </div>
+        <button class="close-drawer-btn" (click)="closeDetail()">✕</button>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="drawer-tabs">
+        <button
+          class="drawer-tab"
+          [class.active]="activeDetailTab === 'briefing'"
+          (click)="activeDetailTab = 'briefing'">
+          🧠 AI Briefing
+        </button>
+        <button
+          class="drawer-tab"
+          [class.active]="activeDetailTab === 'checklist'"
+          (click)="activeDetailTab = 'checklist'">
+          📝 Study Checklist ({{ selectedAssessment.checklistCompletedCount }}/{{ selectedAssessment.checklistTotalCount }})
+        </button>
+        <button
+          class="drawer-tab"
+          [class.active]="activeDetailTab === 'events'"
+          (click)="activeDetailTab = 'events'">
+          📜 Event Audit Trail
+        </button>
+        <button
+          class="drawer-tab"
+          [class.active]="activeDetailTab === 'details'"
+          (click)="activeDetailTab = 'details'">
+          ℹ️ Specs
+        </button>
+      </div>
+
+      <div class="drawer-body">
+
+        <!-- TAB 1: AI Grounded Briefing -->
+        <div class="tab-pane" *ngIf="activeDetailTab === 'briefing'">
+          <div class="briefing-trigger-bar">
+            <div class="briefing-advisory-pill">
+              <span class="pill-icon">💡</span> Grounded AI Intelligence
+            </div>
+            <button
+              class="btn btn-primary"
+              [disabled]="generatingBriefing"
+              (click)="triggerBriefing()">
+              <span *ngIf="!generatingBriefing">⚡ Generate / Refresh Briefing</span>
+              <span *ngIf="generatingBriefing">⏳ Generating Advisory...</span>
+            </button>
+          </div>
+
+          <div class="grounding-disclaimer">
+            <span>🛡️</span>
+            <small>Advisory Guidance grounded in your profile skills & target job requirements. Non-authoritative preparation recommendations.</small>
+          </div>
+
+          <div class="checklist-summary-card">
+            <h4>Checklist Mastery: {{ selectedAssessment.checklistCompletionPercentage }}%</h4>
+            <div class="progress-bar-bg large-bar">
+              <div class="progress-bar-fill" [style.width.%]="selectedAssessment.checklistCompletionPercentage"></div>
+            </div>
+            <p class="summary-meta">{{ selectedAssessment.checklistCompletedCount }} of {{ selectedAssessment.checklistTotalCount }} preparation goals checked</p>
+          </div>
+
+          <div class="topics-card" *ngIf="selectedAssessmentChecklist.length > 0">
+            <h4>Prioritized Focus Domains</h4>
+            <div class="focus-tags">
+              <span class="focus-tag" *ngFor="let cat of checklistCategories" [hidden]="cat === 'ALL'">
+                {{ cat }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Study Checklist -->
+        <div class="tab-pane" *ngIf="activeDetailTab === 'checklist'">
+          <div class="checklist-toolbar">
+            <div class="category-filters">
+              <button
+                class="filter-chip-sm"
+                *ngFor="let c of checklistCategories"
+                [class.active]="selectedCategory === c"
+                (click)="selectedCategory = c">
+                {{ c }}
+              </button>
+            </div>
+          </div>
+
+          <div class="checklist-items-wrap">
+            <div class="empty-checklist" *ngIf="filteredChecklistItems.length === 0">
+              <p>No checklist items yet. Generate an AI briefing to automatically populate study tasks!</p>
+              <button class="btn btn-secondary btn-sm" (click)="triggerBriefing()">Generate Tasks</button>
+            </div>
+
+            <div
+              class="checklist-item-card"
+              *ngFor="let item of filteredChecklistItems"
+              [class.item-done]="item.isCompleted">
+              <label class="item-checkbox-label">
+                <input
+                  type="checkbox"
+                  [checked]="item.isCompleted"
+                  [disabled]="togglingItem[item.id]"
+                  (change)="toggleChecklist(item)" />
+                <div class="item-content">
+                  <div class="item-top">
+                    <span class="item-title">{{ item.title }}</span>
+                    <span class="item-cat-badge">{{ item.topicCategory }}</span>
+                  </div>
+                  <p class="item-desc" *ngIf="item.description">{{ item.description }}</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Event Audit Trail -->
+        <div class="tab-pane" *ngIf="activeDetailTab === 'events'">
+          <div class="timeline-wrap">
+            <div class="timeline-empty" *ngIf="selectedAssessmentEvents.length === 0">
+              <p>No audit events recorded yet.</p>
+            </div>
+
+            <div class="timeline-event" *ngFor="let evt of selectedAssessmentEvents">
+              <div class="timeline-node"></div>
+              <div class="timeline-content">
+                <div class="event-header">
+                  <span class="event-type-badge">{{ evt.eventType }}</span>
+                  <span class="event-time">{{ formatDate(evt.occurredAt) }}</span>
+                </div>
+                <div class="event-transition" *ngIf="evt.previousStatus || evt.newStatus">
+                  Status: <code>{{ evt.previousStatus || 'INIT' }}</code> ➔ <code>{{ evt.newStatus }}</code>
+                </div>
+                <p class="event-notes" *ngIf="evt.notes">{{ evt.notes }}</p>
+                <small class="event-source" *ngIf="evt.source">Source: {{ evt.source }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: Specs & Details -->
+        <div class="tab-pane" *ngIf="activeDetailTab === 'details'">
+          <div class="specs-grid">
+            <div class="spec-row" *ngIf="selectedAssessment.assessmentUrl">
+              <span class="spec-label">Test URL:</span>
+              <a [href]="selectedAssessment.assessmentUrl" target="_blank" class="spec-link">{{ selectedAssessment.assessmentUrl }}</a>
+            </div>
+            <div class="spec-row" *ngIf="selectedAssessment.accessCode">
+              <span class="spec-label">Access Code:</span>
+              <code class="spec-code">{{ selectedAssessment.accessCode }}</code>
+            </div>
+            <div class="spec-row" *ngIf="selectedAssessment.score !== undefined && selectedAssessment.score !== null">
+              <span class="spec-label">Score:</span>
+              <span class="spec-value">{{ selectedAssessment.score }} / {{ selectedAssessment.maxScore || 100 }}</span>
+            </div>
+            <div class="spec-row" *ngIf="selectedAssessment.submissionRepoUrl">
+              <span class="spec-label">Submission Repo:</span>
+              <a [href]="selectedAssessment.submissionRepoUrl" target="_blank" class="spec-link">{{ selectedAssessment.submissionRepoUrl }}</a>
+            </div>
+            <div class="spec-row" *ngIf="selectedAssessment.submissionNotes">
+              <span class="spec-label">Submission Notes:</span>
+              <p class="spec-notes">{{ selectedAssessment.submissionNotes }}</p>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Internal Version:</span>
+              <span>v{{ selectedAssessment.version }}</span>
+            </div>
+          </div>
+
+          <div class="drawer-danger-zone">
+            <h4>Lifecycle Operations</h4>
+            <div class="danger-actions">
+              <button class="btn btn-warning btn-sm" *ngIf="canAbandon(selectedAssessment.status)" (click)="openAbandonModal(selectedAssessment)">
+                Abandon Assessment
+              </button>
+              <button class="btn btn-danger btn-sm" *ngIf="canExpire(selectedAssessment.status)" (click)="openExpireModal(selectedAssessment)">
+                Mark as Expired
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MODAL 1: Create Assessment -->
+  <div class="modal-backdrop" *ngIf="showCreateModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Register Online Assessment</h3>
+        <button class="close-btn" (click)="showCreateModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Job ID (UUID) *</label>
+            <input type="text" [(ngModel)]="createForm.jobId" placeholder="Target Job UUID" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Platform *</label>
+            <select [(ngModel)]="createForm.platform" class="form-control">
+              <option *ngFor="let p of platforms" [value]="p.value">{{ p.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Assessment Title *</label>
+          <input type="text" [(ngModel)]="createForm.title" placeholder="e.g. Meta Production Engineer 90m OA" class="form-control" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input type="number" [(ngModel)]="createForm.durationMinutes" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Application ID (Optional)</label>
+            <input type="text" [(ngModel)]="createForm.applicationId" placeholder="Application UUID" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Invitation Date</label>
+            <input type="date" [(ngModel)]="createForm.invitedDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Deadline Date *</label>
+            <input type="date" [(ngModel)]="createForm.expiresDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Deadline Time</label>
+            <input type="time" [(ngModel)]="createForm.expiresTime" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Portal / Test URL</label>
+            <input type="text" [(ngModel)]="createForm.assessmentUrl" placeholder="https://..." class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Access Code</label>
+            <input type="text" [(ngModel)]="createForm.accessCode" placeholder="Invite passcode" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes & Instructions</label>
+          <textarea [(ngModel)]="createForm.submissionNotes" rows="2" class="form-control" placeholder="Proctoring rules, topics covered..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCreateModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitCreate()">Create Assessment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Start Assessment -->
+  <div class="modal-backdrop" *ngIf="showStartModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Start Assessment Session</h3>
+        <button class="close-btn" (click)="showStartModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Transitioning to <strong>IN_PROGRESS</strong> records your test start time and updates readiness status.</p>
+        <div class="form-group">
+          <label>Optional Session Notes</label>
+          <textarea [(ngModel)]="startForm.notes" rows="3" class="form-control" placeholder="Commencing test..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showStartModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitStart()">Confirm Start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Submit Assessment -->
+  <div class="modal-backdrop" *ngIf="showSubmitModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Assessment Submission</h3>
+        <button class="close-btn" (click)="showSubmitModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>GitHub / Submission Repository (Optional)</label>
+          <input type="text" [(ngModel)]="submitForm.submissionRepoUrl" placeholder="https://github.com/..." class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Submission Notes</label>
+          <textarea [(ngModel)]="submitForm.notes" rows="3" class="form-control" placeholder="All test cases passed..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showSubmitModal = false">Cancel</button>
+        <button class="btn btn-success" (click)="submitSubmission()">Record Submission</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Record Result & Score -->
+  <div class="modal-backdrop" *ngIf="showResultModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Record Assessment Outcome</h3>
+        <button class="close-btn" (click)="showResultModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Outcome Result *</label>
+          <select [(ngModel)]="resultForm.result" class="form-control">
+            <option value="PASSED">Passed (Advanced)</option>
+            <option value="FAILED">Failed (Rejected)</option>
+            <option value="BORDERLINE">Borderline Review</option>
+            <option value="WAIVED">Waived</option>
+            <option value="PENDING">Pending Review</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Achieved Score</label>
+            <input type="number" [(ngModel)]="resultForm.score" class="form-control" placeholder="e.g. 850" />
+          </div>
+          <div class="form-group">
+            <label>Max Score</label>
+            <input type="number" [(ngModel)]="resultForm.maxScore" class="form-control" placeholder="e.g. 1000" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Feedback & Performance Notes</label>
+          <textarea [(ngModel)]="resultForm.notes" rows="3" class="form-control" placeholder="Recruiter reported strong code signal..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showResultModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitResult()">Save Outcome</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Extend Deadline -->
+  <div class="modal-backdrop" *ngIf="showExtendModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Extend Assessment Deadline</h3>
+        <button class="close-btn" (click)="showExtendModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Expiration Date *</label>
+            <input type="date" [(ngModel)]="extendForm.newExpiresDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>New Expiration Time</label>
+            <input type="time" [(ngModel)]="extendForm.newExpiresTime" class="form-control" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Extension Reason</label>
+          <textarea [(ngModel)]="extendForm.reason" rows="3" class="form-control" placeholder="Requested recruiter extension due to..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showExtendModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitExtend()">Save Extension</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Abandon Confirmation -->
+  <div class="modal-backdrop" *ngIf="showAbandonModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Abandon Assessment</h3>
+        <button class="close-btn" (click)="showAbandonModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to abandon this assessment? This will record an immutable abandon event.</p>
+        <div class="form-group">
+          <label>Reason (Optional)</label>
+          <textarea [(ngModel)]="abandonForm.reason" rows="2" class="form-control" placeholder="Candidate withdrew / timing conflict..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAbandonModal = false">Cancel</button>
+        <button class="btn btn-warning" (click)="submitAbandon()">Confirm Abandon</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7: Expire Confirmation -->
+  <div class="modal-backdrop" *ngIf="showExpireModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Mark Assessment Expired</h3>
+        <button class="close-btn" (click)="showExpireModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Confirm marking this assessment as <strong>EXPIRED</strong>. This indicates the test window closed before submission.</p>
+        <div class="form-group">
+          <label>Notes (Optional)</label>
+          <textarea [(ngModel)]="expireForm.notes" rows="2" class="form-control" placeholder="Portal invitation timed out..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showExpireModal = false">Cancel</button>
+        <button class="btn btn-danger" (click)="submitExpire()">Confirm Expired</button>
+      </div>
+    </div>
+  </div>
+
+</div>

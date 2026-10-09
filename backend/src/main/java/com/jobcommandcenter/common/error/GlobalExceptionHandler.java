@@ -195,6 +195,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailure(org.springframework.dao.OptimisticLockingFailureException ex,
+                                                                        HttpServletRequest request) {
+        log.warn("Optimistic locking conflict on {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = ErrorResponse.of(
+            "Concurrent Conflict",
+            HttpStatus.CONFLICT.value(),
+            "The resource was modified by another concurrent operation. Please reload the latest version and retry.",
+            request.getRequestURI(),
+            CorrelationIdHolder.getCorrelationId()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex,
                                                             HttpServletRequest request) {

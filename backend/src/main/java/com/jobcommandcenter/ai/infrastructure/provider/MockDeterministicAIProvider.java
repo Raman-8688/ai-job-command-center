@@ -618,6 +618,207 @@ public class MockDeterministicAIProvider implements AIProvider {
 
         return new AIInterviewPrepResponse(readinessScore, strategy, questions);
     }
+
+    @Override
+    public AIAssessmentBriefingResponse generateAssessmentBriefing(AIAssessmentBriefingRequest request) {
+        String platform = (request.platform() != null && !request.platform().isBlank())
+            ? request.platform().trim().toUpperCase(Locale.ROOT)
+            : "OTHER";
+
+        String platformGuidance = switch (platform) {
+            case "HACKERRANK" -> "HackerRank assessment: Emphasizes standard stream input/output (BufferedReader / System.out), strict execution timeout limits (typically 2-4 seconds per test batch), and memory limits. Dry-run large scale inputs against off-by-one errors and integer overflow.";
+            case "LEETCODE" -> "LeetCode assessment: Function signature-based evaluation with automated harness. Focus on optimal algorithmic Big-O boundaries, constraints up to 10^5, hash table lookups, and two-pointer or sliding window paradigms.";
+            case "CODESIGNAL" -> "CodeSignal assessment: Structured 4-question format (Q1-Q2 warm-up, Q3 matrix/simulation, Q4 algorithmic optimization). Speed and clean first-time submissions are rewarded; penalty applies for failed test suite submissions.";
+            case "KARAT" -> "Karat technical interview: Hybrid session combining rapid-fire architecture/debugging questions followed by 2 algorithmic problems. Prioritize running partial solutions and communicating edge-case assumptions aloud.";
+            case "CODERPAD" -> "CoderPad collaborative environment: Live execution with full standard library support. Write modular methods, print debug statements cleanly, and communicate your thought process proactively.";
+            case "TAKE_HOME" -> "Take-Home assignment: Production-grade architecture expectations. Implement modular layered separation, clean domain modeling, robust unit and integration tests, and include an architectural decision README.";
+            case "TALENTLMS" -> "TalentLMS assessment: Multiple-choice technical fundamentals, syntax nuances, framework conventions, and systems concepts. Read questions carefully and verify edge-case behavioral semantics.";
+            default -> "Standard technical assessment: Write clean, readable code with defensible time and space complexity. Validate inputs against boundary edge cases and handle null/empty states gracefully.";
+        };
+
+        int duration = (request.durationMinutes() != null && request.durationMinutes() > 0) ? request.durationMinutes() : 60;
+        int planMins = Math.max(5, (int) Math.round(duration * 0.15));
+        int implMins = (int) Math.round(duration * 0.65);
+        int verifyMins = Math.max(5, duration - planMins - implMins);
+
+        String timeManagementAdvice = String.format(
+            "Pacing strategy for %d-minute assessment: Allocate %d minutes for reading requirements, analyzing constraints, and identifying edge cases. Dedicate %d minutes to modular implementation. Reserve final %d minutes strictly for dry-running hidden test cases, memory profiling, and complexity verification.",
+            duration, planMins, implMins, verifyMins
+        );
+
+        List<String> prioritizedTopics = new ArrayList<>();
+        prioritizedTopics.add("Algorithmic Problem Solving (Two Pointers, Sliding Window, DFS/BFS)");
+        prioritizedTopics.add("Boundary and Edge Case Validation");
+        if (request.candidateVerifiedSkills() != null && !request.candidateVerifiedSkills().isEmpty()) {
+            prioritizedTopics.add("Standard Collections and Data Structures in " + request.candidateVerifiedSkills().get(0));
+        } else {
+            prioritizedTopics.add("Core Data Structures (Hash Maps, Heaps, Balanced Trees)");
+        }
+        if (request.canonicalJobRequirements() != null && !request.canonicalJobRequirements().isEmpty()) {
+            prioritizedTopics.add("Role Requirements Alignment: " + request.canonicalJobRequirements().get(0));
+        }
+
+        List<AIAssessmentChecklistItem> checklistItems = new ArrayList<>();
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "ENVIRONMENT",
+            "Validate Platform Workspace and Keyboard Shortcuts",
+            "Ensure browser compatibility, test terminal I/O, disable interfering extensions, and familiarize with available standard library versions.",
+            1
+        ));
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "ALGORITHMS",
+            "Review Core Algorithmic Paradigms",
+            "Brush up on hash map lookup, sorting variants, binary search on answer spaces, and graph traversal algorithms.",
+            2
+        ));
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "EDGE_CASES",
+            "Construct Boundary Test Cases",
+            "Prepare tests for zero, negative, empty string/array, integer overflow, and maximum constraint inputs before submitting.",
+            3
+        ));
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "TIME_MANAGEMENT",
+            "Establish Milestone Time Checks",
+            String.format("Set a milestone checkpoint at %d minutes to ensure core logic is operational before attempting micro-optimizations.", implMins),
+            4
+        ));
+
+        String langTopic = (request.candidateVerifiedSkills() != null && !request.candidateVerifiedSkills().isEmpty())
+            ? "Review " + request.candidateVerifiedSkills().get(0) + " Standard Library APIs and Collections"
+            : "Review Language Standard Library APIs and Built-in Collections";
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "LANGUAGE_FUNDAMENTALS",
+            langTopic,
+            "Ensure fluency with built-in sorting comparators, deque/queue implementations, and string manipulation idioms.",
+            5
+        ));
+
+        checklistItems.add(new AIAssessmentChecklistItem(
+            "SUBMISSION",
+            "Final Code Review and Solution Dry-Run",
+            "Walk through code line-by-line against example 1 and example 2 test inputs before pressing final submit.",
+            6
+        ));
+
+        BigDecimal confidence = new BigDecimal("0.92");
+        return new AIAssessmentBriefingResponse(
+            platformGuidance,
+            timeManagementAdvice,
+            prioritizedTopics,
+            checklistItems,
+            confidence
+        );
+    }
+
+    @Override
+    public AICompanyDossierResponse generateCompanyDossier(AICompanyDossierRequest request) {
+        String company = (request.companyName() != null && !request.companyName().isBlank())
+            ? request.companyName().trim()
+            : "Target Enterprise";
+        String role = (request.jobTitle() != null && !request.jobTitle().isBlank())
+            ? request.jobTitle().trim()
+            : "Software Engineer";
+
+        String companyLower = company.toLowerCase(Locale.ROOT);
+        String tier = "ENTERPRISE";
+        if (companyLower.contains("google") || companyLower.contains("amazon") || companyLower.contains("meta")
+            || companyLower.contains("apple") || companyLower.contains("netflix") || companyLower.contains("microsoft")) {
+            tier = "TIER_1_TECH";
+        } else if (companyLower.contains("startup") || companyLower.contains("labs") || companyLower.contains("ai")) {
+            tier = "GROWTH_STARTUP";
+        } else if (companyLower.contains("fintech") || companyLower.contains("bank") || companyLower.contains("capital")) {
+            tier = "FINANCIAL_TECH";
+        }
+
+        String coreTechStack;
+        if (request.canonicalJobRequirements() != null && !request.canonicalJobRequirements().isEmpty()) {
+            coreTechStack = String.join(", ", request.canonicalJobRequirements());
+        } else if (request.jobDescription() != null && !request.jobDescription().isBlank()) {
+            coreTechStack = "Extracted from job posting: Enterprise backend and systems software stack";
+        } else {
+            coreTechStack = "No canonical technical requirements specified in the job posting.";
+        }
+
+        boolean hasResearch = request.rawCompanyResearch() != null && !request.rawCompanyResearch().isBlank();
+        String overview;
+        if (hasResearch) {
+            overview = request.rawCompanyResearch().trim();
+        } else {
+            overview = String.format(
+                "%s is recruiting for the %s position. General industry intelligence indicates an engineering organization focused on reliable, customer-facing software products. (Note: Company-specific internal telemetry was not supplied; overview is derived from public market profiles).",
+                company, role
+            );
+        }
+
+        String engineeringScale = String.format(
+            "Expected engineering profile for %s (%s tier): Distributed multi-service architecture supporting resilient operations, automated CI/CD pipelines, and cloud-native infrastructure.",
+            company, tier
+        );
+
+        String architectureFocus = String.format(
+            "Primary architectural themes relevant to %s: Service boundary decoupling, data consistency guarantees across persistence tiers, and horizontal scalability under high concurrency.",
+            role
+        );
+
+        String engineeringCulture = "Collaborative engineering with emphasis on automated test coverage, code reviews, observability, and iterative feature delivery.";
+
+        // Ground tailored talking points strictly in verified skills and experiences
+        StringBuilder talkingPoints = new StringBuilder();
+        List<String> skills = request.candidateVerifiedSkills();
+        List<String> experiences = request.candidateExperiences();
+        if (skills != null && !skills.isEmpty()) {
+            talkingPoints.append("Candidate demonstrates verified proficiency in ").append(String.join(", ", skills)).append(". ");
+            talkingPoints.append("Highlight real-world engineering contributions leveraging ").append(skills.get(0))
+                .append(" to solve production scalability and reliability challenges directly aligned with the ").append(role).append(" opening.");
+            if (experiences != null && !experiences.isEmpty()) {
+                talkingPoints.append(" Direct evidence from career experience: ").append(String.join("; ", experiences)).append(".");
+            }
+        } else if (experiences != null && !experiences.isEmpty()) {
+            talkingPoints.append("Highlight career experience evidence: ").append(String.join("; ", experiences)).append(". ");
+            talkingPoints.append("Frame engineering decisions in terms of business impact, team collaboration, and architectural trade-offs.");
+        } else {
+            talkingPoints.append("No candidate verified skills or prior experience entries provided. Formulate talking points highlighting core computer science fundamentals, design patterns, and independent software engineering projects.");
+        }
+
+        String interviewerQuestions =
+            "1. What are the highest-priority architectural milestones scheduled for the " + role + " team over the next two quarters?\n" +
+            "2. How does the engineering team balance technical debt remediation with product feature roadmap velocity?\n" +
+            "3. What does the production release and deployment workflow look like, and how is on-call rotation structured?\n" +
+            "4. What observability tooling and SLI/SLO metrics does the team rely on for monitoring service health?";
+
+        int reqCount = request.canonicalJobRequirements() != null ? request.canonicalJobRequirements().size() : 0;
+        int skillCount = skills != null ? skills.size() : 0;
+        int expCount = experiences != null ? experiences.size() : 0;
+
+        String provenanceSummary = String.format(
+            "Grounded in canonical job posting requirements (%d specified) and candidate profile (%d verified skills, %d experiences). %s",
+            reqCount,
+            skillCount,
+            expCount,
+            hasResearch
+                ? "Company context supplemented by verified source research."
+                : "Company internal architecture reflects general industry tier patterns as proprietary company research was not supplied."
+        );
+
+        BigDecimal confidence = (reqCount > 0 && skillCount > 0)
+            ? new BigDecimal("0.92")
+            : new BigDecimal("0.80");
+
+        return new AICompanyDossierResponse(
+            company,
+            tier,
+            overview,
+            engineeringScale,
+            coreTechStack,
+            engineeringCulture,
+            architectureFocus,
+            talkingPoints.toString(),
+            interviewerQuestions,
+            provenanceSummary,
+            confidence
+        );
+    }
 }
 
 
