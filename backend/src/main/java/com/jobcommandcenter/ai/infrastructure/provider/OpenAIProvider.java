@@ -99,6 +99,15 @@ public class OpenAIProvider implements AIProvider {
         log.info("Invoking OpenAI API for application guidance: {} at {}", request.jobTitle(), request.companyName());
         throw new UnsupportedOperationException("OpenAI remote calls disabled in test profile. Use MOCK provider.");
     }
+
+    @Override
+    public com.jobcommandcenter.ai.domain.AIInterviewPrepResponse generateInterviewPrep(com.jobcommandcenter.ai.domain.AIInterviewPrepRequest request) {
+        if (!isAvailable()) {
+            throw new IllegalStateException("OpenAI API key is not configured");
+        }
+        log.info("Invoking OpenAI API for interview prep: {} at {}", request.jobTitle(), request.companyName());
+        throw new UnsupportedOperationException("OpenAI remote calls disabled in test profile. Use MOCK provider.");
+    }
 }
 
 

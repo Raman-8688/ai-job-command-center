@@ -558,6 +558,66 @@ public class MockDeterministicAIProvider implements AIProvider {
             );
         };
     }
+
+    @Override
+    public AIInterviewPrepResponse generateInterviewPrep(AIInterviewPrepRequest request) {
+        String jobTitle = (request.jobTitle() != null && !request.jobTitle().isBlank()) ? request.jobTitle() : "Software Engineer";
+        String company = (request.companyName() != null && !request.companyName().isBlank()) ? request.companyName() : "Target Company";
+        String round = (request.round() != null && !request.round().isBlank()) ? request.round() : "TECHNICAL_SCREEN";
+
+        List<String> skills = (request.candidateVerifiedSkills() != null && !request.candidateVerifiedSkills().isEmpty())
+            ? request.candidateVerifiedSkills()
+            : List.of("Java", "Spring Boot", "PostgreSQL", "System Architecture");
+
+        String primarySkill = skills.get(0);
+        String secondarySkill = skills.size() > 1 ? skills.get(1) : "Relational Databases";
+
+        int readinessScore = Math.min(95, 80 + Math.min(15, skills.size() * 3));
+        String strategy = String.format(
+            "Targeting %s for %s position at %s. Focus on deep %s patterns, data consistency guarantees, and business impact.",
+            round, jobTitle, company, primarySkill
+        );
+
+        List<AIPracticeQuestion> questions = new ArrayList<>();
+
+        // 1. Technical Deep-Dive
+        questions.add(new AIPracticeQuestion(
+            "TECH",
+            String.format("How do you design and optimize high-throughput services using %s and %s in a production environment?", primarySkill, secondarySkill),
+            String.format("Discuss concurrency models, connection pooling, memory profiling, and query indexing strategies in %s.", primarySkill),
+            String.format("Situation: Faced with high latency spikes under peak load.\nTask: Re-architect critical execution paths using %s.\nAction: Optimized queries, applied batching, and introduced cache layers.\nResult: Reduced p99 response times by 45%% while maintaining 99.99%% availability.", primarySkill),
+            new BigDecimal("0.95")
+        ));
+
+        // 2. System Design & Scalability
+        questions.add(new AIPracticeQuestion(
+            "SYSTEM_DESIGN",
+            String.format("How would you design a fault-tolerant notification and event processing pipeline for %s scale?", company),
+            "Address event delivery semantics (at-least-once, idempotent consumers), message partitioning, backpressure handling, and dead-letter queue strategies.",
+            String.format("Situation: Asynchronous ingestion service required scalable event fanout.\nTask: Design decoupled pipeline capable of 10,000 events/sec.\nAction: Implemented event streaming with durable message queues and idempotent consumer workers in %s.\nResult: Zero data loss during regional outages and linear scaling.", primarySkill),
+            new BigDecimal("0.90")
+        ));
+
+        // 3. Behavioral & Culture
+        questions.add(new AIPracticeQuestion(
+            "BEHAVIORAL",
+            String.format("Tell me about a time you encountered a critical production incident at work. How did you lead the triage and resolve it?"),
+            "Demonstrate psychological safety, blameless post-mortem culture, structured root-cause analysis, and preventative monitoring guardrails.",
+            String.format("Situation: Unexpected memory leak caused rolling restarts during business hours.\nTask: Triage issue swiftly to restore customer service SLA.\nAction: Isolated failing replicas, collected heap dumps, identified unclosed stream leak, and rolled back safely.\nResult: Restored stability in 18 minutes; introduced static analysis rules to prevent re-occurrence."),
+            new BigDecimal("0.92")
+        ));
+
+        // 4. Leadership & Cross-Functional Collaboration
+        questions.add(new AIPracticeQuestion(
+            "LEADERSHIP",
+            String.format("How do you handle disagreements on technical trade-offs with senior engineering peers or product stakeholders?"),
+            "Show objective decision matrix evaluation, RFC documentation, listening with empathy, and committing once a direction is decided.",
+            "Situation: Conflicting proposals between relational schema vs document store for a new service.\nTask: Drive consensus across 4 senior engineers without delaying sprint goals.\nAction: Built a comparative benchmark matrix measuring read/write patterns and hosted a focused RFC review.\nResult: Achieved unanimous alignment on PostgreSQL with JSONB; delivered on schedule.",
+            new BigDecimal("0.88")
+        ));
+
+        return new AIInterviewPrepResponse(readinessScore, strategy, questions);
+    }
 }
 
 

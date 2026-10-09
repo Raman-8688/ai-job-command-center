@@ -7,22 +7,50 @@
     <div class="nav-tabs">
       <button
         class="tab-btn"
+        [class.active]="activeTab === 'interviews'"
+        (click)="activeTab = 'interviews'">
+        📅 Interview Cockpit
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'prep'"
+        (click)="activeTab = 'prep'">
+        🧠 AI Prep & Simulation
+      </button>
+      <button
+        class="tab-btn"
         [class.active]="activeTab === 'applications'"
         (click)="activeTab = 'applications'">
-        Application Tracker
+        📋 Applications
       </button>
       <button
         class="tab-btn"
         [class.active]="activeTab === 'tailoring'"
         (click)="activeTab = 'tailoring'">
-        Resume Tailoring
+        📄 Resume Tailoring
       </button>
     </div>
     <span class="badge">{{ status }}</span>
   </header>
 
   <section class="workbench-wrapper">
-    <app-application-tracker *ngIf="activeTab === 'applications'"></app-application-tracker>
-    <app-tailored-resume-workbench *ngIf="activeTab === 'tailoring'"></app-tailored-resume-workbench>
+    <app-interview-cockpit
+      *ngIf="activeTab === 'interviews'"
+      (openPrep)="navigateToPrep($event)">
+    </app-interview-cockpit>
+
+    <app-interview-prep-workspace
+      *ngIf="activeTab === 'prep'"
+      [interviewId]="selectedInterviewIdForPrep"
+      (backToCockpit)="returnToCockpit()">
+    </app-interview-prep-workspace>
+
+    <app-application-tracker
+      *ngIf="activeTab === 'applications'">
+    </app-application-tracker>
+
+    <app-tailored-resume-workbench
+      *ngIf="activeTab === 'tailoring'">
+    </app-tailored-resume-workbench>
   </section>
 </main>

@@ -1,0 +1,227 @@
+<div class="prep-container">
+
+  <!-- Top Navigation & Header -->
+  <header class="prep-header">
+    <div class="header-left">
+      <button class="back-link" (click)="backToCockpit.emit()">
+        ← Back to Interview Schedule
+      </button>
+      <h2 class="page-title">
+        Interview Preparation & Practice Workspace
+      </h2>
+      <p class="page-subtitle" *ngIf="bundle">
+        Targeting: <strong>{{ bundle.jobTitle }}</strong> at <strong>{{ bundle.companyName }}</strong> ({{ bundle.round }})
+      </p>
+    </div>
+
+    <div class="header-right">
+      <button class="btn btn-outline" (click)="generateAiPrep()" [disabled]="loading">
+        <span *ngIf="!loading">🔄 Regenerate Questions</span>
+        <span *ngIf="loading">Generating...</span>
+      </button>
+      <button class="btn btn-primary" (click)="openCustomModal()">
+        + Add Question
+      </button>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading && !bundle">
+    <div class="spinner"></div>
+    <p>Synthesizing grounded questions with deterministic AI engine...</p>
+  </div>
+
+  <div class="prep-content" *ngIf="bundle">
+
+    <!-- Top Dashboard Overview (Directly Inspired by Image 1) -->
+    <div class="overview-grid">
+
+      <!-- Hero Greeting & Strategy Card -->
+      <div class="hero-card">
+        <div class="hero-header">
+          <span class="avatar-pill">👋</span>
+          <div>
+            <h3>Hello, Candidate!</h3>
+            <span class="hero-tag">Active Interview Simulation</span>
+          </div>
+        </div>
+        <p class="strategy-text">
+          {{ bundle.strategySummary }}
+        </p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">{{ bundle.questions.length }}</span>
+            <span class="stat-desc">Questions Prepared</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ getReviewedCount() }}</span>
+            <span class="stat-desc">Reviewed by You</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Readiness Score Gauge Card (Image 1 Circular Meter) -->
+      <div class="score-card">
+        <h4 class="card-heading">Readiness Score</h4>
+        <div class="gauge-wrapper">
+          <div class="gauge-circle" [style.--score-deg]="(bundle.readinessScore * 3.6) + 'deg'">
+            <div class="gauge-inner">
+              <span class="gauge-value">{{ bundle.readinessScore }}%</span>
+              <span class="gauge-sub">Readiness</span>
+            </div>
+          </div>
+        </div>
+        <div class="gauge-status">
+          <span class="status-badge" [class.badge-strong]="bundle.readinessScore >= 80">
+            {{ bundle.readinessScore >= 80 ? '🌟 Strong Match' : '📈 In Progress' }}
+          </span>
+          <span class="benchmark-text">Candidate Benchmark: 80%+</span>
+        </div>
+      </div>
+
+      <!-- Domain Competencies Report (Image 1 Skills Progress Bars) -->
+      <div class="competencies-card">
+        <h4 class="card-heading">Competency Matrix</h4>
+        <div class="skills-list">
+          <div class="skill-row" *ngFor="let comp of competencies">
+            <div class="skill-info">
+              <span>{{ comp.name }}</span>
+              <strong>{{ comp.percentage }}%</strong>
+            </div>
+            <div class="progress-bar-bg">
+              <div
+                class="progress-bar-fill"
+                [ngClass]="comp.colorClass"
+                [style.width.%]="comp.percentage">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Category Filter Pills (Image 1: Tech, Behavioral, System Design, Leadership) -->
+    <div class="category-toolbar">
+      <div class="pills-container">
+        <button
+          *ngFor="let cat of categories"
+          class="category-pill"
+          [class.active]="selectedCategory === cat"
+          (click)="setCategory(cat)">
+          {{ cat === 'ALL' ? 'All Categories' : cat.replace('_', ' ') }}
+        </button>
+      </div>
+      <span class="count-badge">{{ filteredQuestions.length }} Questions</span>
+    </div>
+
+    <!-- Questions Feed -->
+    <div class="questions-feed">
+      <div *ngIf="filteredQuestions.length === 0" class="empty-questions">
+        <p>No questions found under this category.</p>
+      </div>
+
+      <div *ngFor="let q of filteredQuestions" class="question-card" [class.reviewed]="q.isReviewed">
+
+        <!-- Question Header -->
+        <div class="question-header">
+          <div class="question-meta">
+            <span class="topic-tag" [ngClass]="'tag-' + q.topicCategory.toLowerCase()">
+              {{ q.topicCategory.replace('_', ' ') }}
+            </span>
+            <span class="confidence-tag" *ngIf="q.confidenceScore">
+              🎯 {{ (q.confidenceScore * 100) | number:'1.0-0' }}% Match
+            </span>
+          </div>
+
+          <button
+            class="review-toggle-btn"
+            [class.is-reviewed]="q.isReviewed"
+            (click)="toggleReviewed(q)">
+            {{ q.isReviewed ? '✓ Reviewed' : 'Mark Reviewed' }}
+          </button>
+        </div>
+
+        <!-- Question Body -->
+        <h4 class="question-prompt">{{ q.question }}</h4>
+
+        <div class="talking-points" *ngIf="q.talkingPoints">
+          <strong>Key Focus Areas:</strong> {{ q.talkingPoints }}
+        </div>
+
+        <!-- Expandable STAR Model Answer (Situation, Task, Action, Result) -->
+        <div class="star-section" *ngIf="q.suggestedAnswerStar">
+          <button class="star-toggle-btn" (click)="toggleExpand(q.id)">
+            <span>{{ expandedQuestions[q.id] ? '▼ Hide STAR Framework Model Answer' : '▶ View STAR Model Framework Guide' }}</span>
+          </button>
+
+          <div class="star-content" *ngIf="expandedQuestions[q.id]">
+            <div class="star-box">
+              <pre class="star-text">{{ q.suggestedAnswerStar }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Candidate Private Practice Notes -->
+        <div class="notes-section">
+          <label class="notes-label">Your Talking Points & Custom STAR Notes:</label>
+          <textarea
+            [(ngModel)]="q.userAnswerNotes"
+            rows="3"
+            class="notes-textarea"
+            placeholder="Type your talking points, real project anecdotes, and metrics here..."></textarea>
+          <div class="notes-actions">
+            <button class="btn btn-sm btn-outline" (click)="saveQuestionNotes(q)">
+              💾 Save Notes
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Custom Question Modal -->
+  <div class="modal-backdrop" *ngIf="showCustomModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Add Practice Question</h3>
+        <button class="close-btn" (click)="showCustomModal = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Category</label>
+          <select [(ngModel)]="customForm.topicCategory" class="form-control">
+            <option value="TECH">Technical</option>
+            <option value="SYSTEM_DESIGN">System Design</option>
+            <option value="BEHAVIORAL">Behavioral</option>
+            <option value="LEADERSHIP">Leadership</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Question Prompt *</label>
+          <textarea [(ngModel)]="customForm.question" rows="2" class="form-control" placeholder="e.g. How do you handle cache invalidation in distributed systems?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Talking Points</label>
+          <input type="text" [(ngModel)]="customForm.talkingPoints" class="form-control" placeholder="e.g. Write-through, Write-back, TTLs" />
+        </div>
+
+        <div class="form-group">
+          <label>STAR Answer Guide (Optional)</label>
+          <textarea [(ngModel)]="customForm.suggestedAnswerStar" rows="3" class="form-control" placeholder="Situation / Task / Action / Result outline..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCustomModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitCustomQuestion()">Add to Practice List</button>
+      </div>
+    </div>
+  </div>
+
+</div>
