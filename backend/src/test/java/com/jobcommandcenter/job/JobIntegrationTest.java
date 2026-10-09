@@ -72,6 +72,8 @@ class JobIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM emails");
+        jdbcTemplate.execute("DELETE FROM email_connections");
         jdbcTemplate.execute("DELETE FROM tailored_resume_suggestions");
         jdbcTemplate.execute("DELETE FROM tailored_resumes");
         jdbcTemplate.execute("DELETE FROM resume_skills");

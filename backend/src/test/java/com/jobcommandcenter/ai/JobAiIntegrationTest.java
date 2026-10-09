@@ -69,6 +69,8 @@ class JobAiIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM emails");
+        jdbcTemplate.execute("DELETE FROM email_connections");
         jdbcTemplate.execute("DELETE FROM job_ai_red_flags");
         jdbcTemplate.execute("DELETE FROM job_ai_requirements");
         jdbcTemplate.execute("DELETE FROM job_ai_technologies");

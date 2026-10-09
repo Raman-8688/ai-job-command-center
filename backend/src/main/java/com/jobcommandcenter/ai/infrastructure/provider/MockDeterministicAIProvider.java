@@ -423,4 +423,88 @@ public class MockDeterministicAIProvider implements AIProvider {
         }
         return flags;
     }
+
+    @Override
+    public AIEmailClassificationResponse classifyEmail(AIEmailClassificationRequest request) {
+        String subject = request.subject() != null ? request.subject().toLowerCase(Locale.ROOT) : "";
+        String body = request.bodyPlain() != null ? request.bodyPlain().toLowerCase(Locale.ROOT) : "";
+        String text = subject + " " + body;
+
+        if (text.contains("interview") || text.contains("technical screen") || text.contains("round 1") || text.contains("phone screen") || text.contains("chat with our team")) {
+            return new AIEmailClassificationResponse("INTERVIEW_INVITATION", new BigDecimal("0.950"), "Matched direct interview scheduling invitation in communication.");
+        }
+        if (text.contains("online assessment") || text.contains("hackerrank") || text.contains("codility") || text.contains("codesignal") || text.contains("coding challenge") || text.contains("technical assessment")) {
+            return new AIEmailClassificationResponse("ASSESSMENT", new BigDecimal("0.950"), "Matched online technical coding challenge or assessment request.");
+        }
+        if (text.contains("thank you for applying") || text.contains("application received") || text.contains("we received your application") || text.contains("application confirmation")) {
+            return new AIEmailClassificationResponse("APPLICATION_CONFIRMATION", new BigDecimal("0.920"), "Matched official job application receipt confirmation.");
+        }
+        if (text.contains("offer letter") || text.contains("pleased to offer") || text.contains("formal offer") || text.contains("congratulations on your offer")) {
+            return new AIEmailClassificationResponse("OFFER", new BigDecimal("0.980"), "Matched formal job offer letter / package proposal.");
+        }
+        if (text.contains("unfortunately") || text.contains("not moving forward") || text.contains("pursue other candidates") || text.contains("decided to move forward with other")) {
+            return new AIEmailClassificationResponse("REJECTION", new BigDecimal("0.940"), "Matched candidate notification of non-selection.");
+        }
+        if (text.contains("reaching out") || text.contains("saw your profile") || text.contains("talent acquisition") || text.contains("recruiter at") || text.contains("exciting opportunity")) {
+            return new AIEmailClassificationResponse("NETWORKING_OUTREACH", new BigDecimal("0.880"), "Matched direct recruiter or sourcer outbound inquiry.");
+        }
+        if (text.contains("status update") || text.contains("update on your application") || text.contains("application status")) {
+            return new AIEmailClassificationResponse("STATUS_UPDATE", new BigDecimal("0.850"), "Matched application progress or status update.");
+        }
+        if (text.contains("unsubscribe") || text.contains("newsletter") || text.contains("promotional") || text.contains("sale") || text.contains("webinar")) {
+            return new AIEmailClassificationResponse("SPAM_OR_IRRELEVANT", new BigDecimal("0.910"), "Detected non-job promotional or marketing communication.");
+        }
+
+        return new AIEmailClassificationResponse("OTHER", new BigDecimal("0.500"), "General career or corporate correspondence.");
+    }
+
+    @Override
+    public AIEmailJobExtractionResponse extractJobFromEmail(AIEmailJobExtractionRequest request) {
+        String subject = request.subject() != null ? request.subject() : "";
+        String body = request.bodyPlain() != null ? request.bodyPlain() : "";
+        String sender = request.sender() != null ? request.sender() : "";
+
+        // Extract company
+        String company = "Unknown Company";
+        Matcher atMatcher = Pattern.compile("(?:at|with)\\s+([A-Z][a-zA-Z0-9&\\s]{2,30})", Pattern.CASE_INSENSITIVE).matcher(subject + " " + body);
+        if (atMatcher.find()) {
+            company = atMatcher.group(1).trim();
+        } else if (sender.contains("@")) {
+            String domain = sender.substring(sender.indexOf('@') + 1);
+            if (domain.contains(".")) {
+                String domainBase = domain.substring(0, domain.indexOf('.'));
+                if (!domainBase.equalsIgnoreCase("gmail") && !domainBase.equalsIgnoreCase("yahoo") && !domainBase.equalsIgnoreCase("outlook")) {
+                    company = Character.toUpperCase(domainBase.charAt(0)) + domainBase.substring(1).toLowerCase(Locale.ROOT);
+                }
+            }
+        }
+
+        // Extract job title
+        String jobTitle = "Software Engineer";
+        Pattern titlePattern = Pattern.compile("((?:Senior|Lead|Staff|Principal|Junior)?\\s*(?:Software Engineer|Backend Engineer|Frontend Engineer|Full Stack Engineer|DevOps Engineer|Data Engineer|Cloud Architect|Product Manager))", Pattern.CASE_INSENSITIVE);
+        Matcher titleMatcher = titlePattern.matcher(subject + " " + body);
+        if (titleMatcher.find()) {
+            jobTitle = titleMatcher.group(1).trim();
+        }
+
+        // Extract requisition / external ID
+        String externalJobId = null;
+        Matcher reqMatcher = Pattern.compile("(?:Req(?:uisition)?|Job ID|Ref(?:erence)?)\\s*[:#]?\\s*([A-Z0-9-]{4,20})", Pattern.CASE_INSENSITIVE).matcher(subject + " " + body);
+        if (reqMatcher.find()) {
+            externalJobId = reqMatcher.group(1).trim();
+        }
+
+        String nextSteps = "Follow up with recruiter / Review application timeline.";
+        String lowerSubject = subject.toLowerCase(Locale.ROOT);
+        if (lowerSubject.contains("interview")) {
+            nextSteps = "Prepare system design, algorithmic problems, and review project contributions.";
+        } else if (lowerSubject.contains("assessment") || lowerSubject.contains("hackerrank")) {
+            nextSteps = "Complete coding assessment within prescribed timeline window.";
+        }
+
+        String notes = "Extracted from email: \"" + subject + "\" from " + sender;
+
+        return new AIEmailJobExtractionResponse(company, jobTitle, externalJobId, nextSteps, notes);
+    }
 }
+

@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - Phase 7: Gmail & Email Integration - 2026-10-08
+
+### Added
+- **Gmail OAuth 2.0 Connection Management:** Implemented `EmailConnection` aggregate root supporting Google OAuth authorization URL generation, code-to-token exchange, token refresh, and clean disconnection.
+- **Synchronized Inbox Ingestion & Deduplication:** Created `Email` aggregate root and `EmailSyncService` supporting inbox fetching with idempotency on external message IDs (`uq_emails_user_external_message_id`).
+- **AI & Deterministic Email Classification:** Automated categorization of incoming emails into lifecycle stages: `APPLICATION_CONFIRMATION`, `INTERVIEW_INVITATION`, `ASSESSMENT`, `OFFER`, `REJECTION`, `NETWORKING_OUTREACH`, `STATUS_UPDATE`, `SPAM_OR_IRRELEVANT`, and `OTHER` with confidence ratings and reasoning.
+- **Job Intelligence Extraction & Auto-Creation:** `EmailService.createJobFromEmail` automatically extracts company name, role title, requisition ID, and action items, creates canonical `Job` with `source = JobSource.EMAIL`, adds `UserJob` tracking, and links the email.
+- **Bidirectional Job Association:** Created APIs to link, disassociate, and query all emails related to specific jobs (`GET /api/jobs/{jobId}/emails`).
+- **Zero Token Leakage & Security Boundary:** Access and refresh tokens are strictly restricted to database persistence and never exposed in REST DTOs (`EmailConnectionResponse`).
+- **Flyway Database Migration V7:** Created `V7__gmail_email_integration.sql` creating `email_connections` and `emails` tables with foreign keys and performance indexes.
+- **SPI Client Layer:** Implemented `GmailClient` SPI with `MockGmailClient` supporting offline deterministic testing and realistic career email fixtures.
+- **REST Endpoints:** Added 14 new endpoints across connection, synchronization, email management, and job linking under `/api/email` and `/api/emails`.
+- **API Catalog & Contract Documentation:** Authored `docs/API_CATALOG.md` and `docs/phase-7-gmail-email-integration.md` for seamless frontend collaboration with Bolt.new.
+
+---
+
 ## [0.7.0] - Phase 6: Resume Tailoring, Versioning & Job-Specific Resume Workflow - 2026-10-08
+
 
 ### Added
 - **Tailored Resume Aggregate & Section Suggestions:** Implemented `TailoredResume` aggregate root and `TailoredResumeSuggestion` entities linking tailored drafts to master resumes and target jobs.
