@@ -1,0 +1,173 @@
+<div class="intel-container">
+
+  <!-- Header -->
+  <header class="intel-header">
+    <div class="header-left">
+      <h2 class="intel-title">Company Technical Dossiers & Intelligence</h2>
+      <p class="intel-subtitle">Deep architectural analysis, engineering culture, tech stacks & interview strategy</p>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div class="alert alert-success" *ngIf="successMessage">
+    <span>✅</span> {{ successMessage }}
+  </div>
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    <span>⚠️</span> {{ errorMessage }}
+  </div>
+
+  <!-- Job Selector Toolbar -->
+  <div class="selector-card">
+    <div class="input-wrap">
+      <label class="selector-label">Target Job ID (UUID):</label>
+      <div class="input-action-row">
+        <input
+          type="text"
+          [(ngModel)]="targetJobId"
+          placeholder="Paste Job UUID (e.g. from job card or assessment)..."
+          class="job-id-input" />
+        <button class="btn btn-secondary" [disabled]="loading || !targetJobId.trim()" (click)="fetchDossier()">
+          <span>🔍</span> Load Dossier
+        </button>
+        <button class="btn btn-primary" [disabled]="generating || !targetJobId.trim()" (click)="generateDossier()">
+          <span *ngIf="!generating">⚡ Compile / Refresh Dossier</span>
+          <span *ngIf="generating">⏳ Generating Intelligence...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading || generating">
+    <div class="spinner"></div>
+    <p *ngIf="loading">Retrieving compiled company dossier...</p>
+    <p *ngIf="generating">Synthesizing grounded technical dossier from job requirements and candidate profile...</p>
+  </div>
+
+  <!-- Not Found / No Dossier Yet State -->
+  <div class="empty-state" *ngIf="!loading && !generating && notFound">
+    <div class="empty-icon">🏢</div>
+    <h3>No Dossier Compiled Yet</h3>
+    <p>A technical dossier has not yet been generated for Job ID <code>{{ targetJobId }}</code>.</p>
+    <button class="btn btn-primary" (click)="generateDossier()">
+      ⚡ Generate Grounded Technical Dossier
+    </button>
+  </div>
+
+  <!-- Dossier Presentation View -->
+  <div class="dossier-view" *ngIf="!loading && !generating && dossier">
+
+    <!-- Dossier Hero Card -->
+    <div class="dossier-hero">
+      <div class="hero-main">
+        <div class="hero-badges">
+          <span class="tier-badge">{{ dossier.companyTier || 'Enterprise' }} <small>(Advisory)</small></span>
+          <span class="confidence-badge" *ngIf="dossier.confidenceScore">
+            🛡️ {{ ((dossier.confidenceScore || 0) * 100) | number:'1.0-0' }}% Confidence
+          </span>
+          <span class="timestamp-tag">Updated: {{ formatDate(dossier.updatedAt) }}</span>
+        </div>
+        <h1 class="company-name">{{ dossier.companyName }}</h1>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-secondary btn-sm" [disabled]="generating" (click)="generateDossier()">
+          🔄 Re-synthesize Intelligence
+        </button>
+      </div>
+    </div>
+
+    <!-- Provenance & Grounding Banner -->
+    <div class="provenance-banner">
+      <div class="provenance-icon">🛡️</div>
+      <div class="provenance-text">
+        <strong>Grounding & Transparency:</strong>
+        <p>{{ dossier.provenanceSummary || 'Synthesized strictly from parsed job description criteria and candidate verified skill profiles.' }}</p>
+        <small class="disclaimer-note">Non-authoritative analysis. Inferred patterns are strategic preparation suggestions, not internal corporate documentation.</small>
+      </div>
+    </div>
+
+    <!-- Dossier Grid Sections -->
+    <div class="dossier-grid">
+
+      <!-- Card 1: Executive Overview -->
+      <div class="intel-card" *ngIf="dossier.overview">
+        <div class="card-header">
+          <span class="card-icon">🏢</span>
+          <h3>Executive Overview & Business Mission</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.overview)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Core Tech Stack -->
+      <div class="intel-card" *ngIf="dossier.coreTechStack">
+        <div class="card-header">
+          <span class="card-icon">💻</span>
+          <h3>Core Technology Stack & Ecosystem</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.coreTechStack)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 3: Engineering Scale -->
+      <div class="intel-card" *ngIf="dossier.engineeringScale">
+        <div class="card-header">
+          <span class="card-icon">📈</span>
+          <h3>Engineering Scale & Operational Complexity</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.engineeringScale)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 4: Architecture Focus -->
+      <div class="intel-card" *ngIf="dossier.architectureFocus">
+        <div class="card-header">
+          <span class="card-icon">🏗️</span>
+          <h3>Architecture Focus & Design Priorities</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.architectureFocus)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 5: Engineering Culture -->
+      <div class="intel-card" *ngIf="dossier.engineeringCulture">
+        <div class="card-header">
+          <span class="card-icon">🤝</span>
+          <h3>Engineering Culture & Evaluation Standards</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.engineeringCulture)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 6: Tailored Talking Points -->
+      <div class="intel-card highlight-card" *ngIf="dossier.tailoredTalkingPoints">
+        <div class="card-header">
+          <span class="card-icon">🎯</span>
+          <h3>Tailored Talking Points for Candidate</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.tailoredTalkingPoints)">{{ para }}</p>
+        </div>
+      </div>
+
+      <!-- Card 7: Interviewer Questions -->
+      <div class="intel-card highlight-card" *ngIf="dossier.interviewerQuestions">
+        <div class="card-header">
+          <span class="card-icon">❓</span>
+          <h3>High-Impact Questions to Ask Interviewers</h3>
+        </div>
+        <div class="card-content">
+          <p *ngFor="let para of formatParagraphs(dossier.interviewerQuestions)">{{ para }}</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -61,4 +61,25 @@ class DatabaseFlywayIntegrationTest {
         );
         assertThat(phase).isEqualTo("1_backend_foundation");
     }
+
+    @Test
+    @DisplayName("Flyway should apply all migrations up to V10 and create Phase 10 assessment tables")
+    void flywayShouldApplyV10AndCreateAssessmentTables() {
+        var appliedMigrations = flyway.info().applied();
+        assertThat(appliedMigrations).isNotEmpty();
+        assertThat(appliedMigrations[appliedMigrations.length - 1].getVersion().getVersion()).isEqualTo("10");
+        assertThat(appliedMigrations[appliedMigrations.length - 1].getDescription()).isEqualTo("online assessments and intel");
+
+        Integer assessmentTableCount = jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name = 'online_assessments' AND table_schema = 'public'",
+            Integer.class
+        );
+        assertThat(assessmentTableCount).isEqualTo(1);
+
+        Integer dossierTableCount = jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM information_schema.tables WHERE table_name = 'company_dossiers' AND table_schema = 'public'",
+            Integer.class
+        );
+        assertThat(dossierTableCount).isEqualTo(1);
+    }
 }
