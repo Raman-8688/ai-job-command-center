@@ -77,6 +77,8 @@ class TailoredResumeIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM job_application_events");
+        jdbcTemplate.execute("DELETE FROM job_applications");
         jdbcTemplate.execute("DELETE FROM emails");
         jdbcTemplate.execute("DELETE FROM email_connections");
         jdbcTemplate.execute("DELETE FROM tailored_resume_suggestions");

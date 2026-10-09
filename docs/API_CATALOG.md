@@ -401,3 +401,152 @@ Cross-Origin Resource Sharing (CORS) is enabled for `http://localhost:4200` with
 | `GET` | `/api/jobs/{id}/match` | Calculates deterministic match score against candidate's verified skills |
 | `POST` | `/api/jobs/{id}/ai-analysis` | Triggers AI deep analysis (responsibilities, tech stack, red flags) |
 | `GET` | `/api/jobs/{id}/ai-analysis` | Retrieves saved AI job analysis |
+
+---
+
+## 7. Application Tracking & Lifecycle Endpoints (Phase 8)
+
+### 7.1 Create Job Application
+* **Method:** `POST`
+* **Endpoint:** `/api/applications`
+* **Auth:** Bearer JWT required
+* **Success Status:** `201 Created`
+* **Request Body:**
+  ```json
+  {
+    "jobId": "UUID",
+    "status": "DRAFT",
+    "submissionSource": "LINKEDIN",
+    "appliedAt": "2026-10-09T08:00:00Z",
+    "externalReference": "REQ-12345",
+    "notes": "Submitted application directly through portal",
+    "nextFollowUpDate": "2026-10-16T08:00:00Z",
+    "resumeId": "UUID",
+    "tailoredResumeId": "UUID"
+  }
+  ```
+* **Validation & Security:**
+  - `jobId` must exist in canonical repository (otherwise `404 Not Found`).
+  - Unique constraint: A candidate cannot have duplicate applications for the same job (returns `409 Conflict`).
+  - If `resumeId` or `tailoredResumeId` is passed, candidate must own them (otherwise `404 Not Found`).
+  - Emits immutable `CREATED` lifecycle event.
+
+### 7.2 List Candidate Applications (Search & Paginated)
+* **Method:** `GET`
+* **Endpoint:** `/api/applications?status={status}&search={search}&page={page}&size={size}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `ApplicationPageResponse` with content list of `JobApplicationSummaryResponse`.
+
+### 7.3 Get Dashboard Metrics Summary
+* **Method:** `GET`
+* **Endpoint:** `/api/applications/dashboard-summary`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:**
+  ```json
+  {
+    "countsByStatus": {
+      "DRAFT": 2,
+      "APPLIED": 5,
+      "SCREENING": 1,
+      "INTERVIEW": 2,
+      "OFFER": 0,
+      "ACCEPTED": 0,
+      "REJECTED": 1,
+      "WITHDRAWN": 0,
+      "ARCHIVED": 0
+    },
+    "activeApplicationsCount": 8,
+    "followUpsDueCount": 2,
+    "totalApplicationsCount": 11
+  }
+  ```
+
+### 7.4 Get Application Detail
+* **Method:** `GET`
+* **Endpoint:** `/api/applications/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `JobApplicationResponse` with job details, resume linkages, and chronological timeline events.
+* **Ownership Rule:** If application belongs to another user, returns `404 Not Found` (multi-tenant protection).
+
+### 7.5 Update Application Metadata
+* **Method:** `PUT`
+* **Endpoint:** `/api/applications/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "submissionSource": "COMPANY_WEBSITE",
+    "externalReference": "APP-987",
+    "appliedAt": "2026-10-09T08:00:00Z",
+    "nextFollowUpDate": "2026-10-17T08:00:00Z",
+    "notes": "Updated contact info for recruiter"
+  }
+  ```
+
+### 7.6 Transition Application Lifecycle Status
+* **Method:** `POST`
+* **Endpoint:** `/api/applications/{id}/transition`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "targetStatus": "INTERVIEW",
+    "notes": "Passed technical phone screen, scheduled onsite panel",
+    "eventSource": "USER",
+    "occurredAt": "2026-10-09T08:00:00Z"
+  }
+  ```
+* **State Machine Rules:**
+  - Valid transitions enforced according to aggregate root lifecycle rules.
+  - Invalid transitions reject with `400 Bad Request` and descriptive error details.
+  - Automatically records immutable `JobApplicationEvent`.
+
+### 7.7 Link Resume / Tailored Resume
+* **Method:** `POST`
+* **Endpoint:** `/api/applications/{id}/link-resume`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "resumeId": "UUID",
+    "tailoredResumeId": "UUID",
+    "notes": "Linked tailored resume variant v2"
+  }
+  ```
+
+### 7.8 Get Timeline Audit Log
+* **Method:** `GET`
+* **Endpoint:** `/api/applications/{id}/events`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** Ordered list of `JobApplicationEventResponse`.
+
+### 7.9 Get AI Next-Step & Follow-Up Guidance
+* **Method:** `GET`
+* **Endpoint:** `/api/applications/{id}/guidance`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:**
+  ```json
+  {
+    "recommendedAction": "Send courteous status inquiry to talent acquisition team",
+    "rationale": "Over 7 days have elapsed since submission without a formal response.",
+    "draftedFollowUpMessage": "Dear Recruiting Team,\n\nI hope this email finds you well...",
+    "modelUsed": "MockDeterministicAIProvider",
+    "generatedAt": "2026-10-09T08:00:00Z"
+  }
+  ```
+
+### 7.10 Delete Application
+* **Method:** `DELETE`
+* **Endpoint:** `/api/applications/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `204 No Content`
+* **Safety Constraint:** Only `DRAFT` or `WITHDRAWN` applications may be deleted. Active stages (`APPLIED`, `SCREENING`, `INTERVIEW`) reject deletion with `400 Bad Request`.
+

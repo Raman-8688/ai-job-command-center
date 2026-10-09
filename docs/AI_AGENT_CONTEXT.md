@@ -50,6 +50,16 @@
   - Bidirectional job-email association (`POST /api/emails/{id}/associate-job/{jobId}`).
   - Zero token leakage, strict multi-tenant isolation, complete RFC 7807 contracts in `docs/API_CATALOG.md`.
   - Database migration: `V7__gmail_email_integration.sql`.
+- **Phase 8 — Application Tracking & Lifecycle Management**:
+  - Dedicated `JobApplication` aggregate root managing lifecycle transitions across 10 distinct states (`DRAFT`, `APPLIED`, `SCREENING`, `ASSESSMENT`, `INTERVIEW`, `OFFER`, `ACCEPTED`, `REJECTED`, `WITHDRAWN`, `ARCHIVED`).
+  - Immutable chronological audit trail (`JobApplicationEvent`) logging transitions, notes, and events.
+  - Linked master resume (`Resume`) and job-specific tailored resume (`TailoredResume`) verification.
+  - Unique application per user/job constraint (`uq_job_applications_user_job`).
+  - Pipeline funnel summary and due follow-up tracking metrics (`GET /api/applications/dashboard-summary`).
+  - Advisory AI follow-up next-step guidance and email generator (`generateApplicationGuidance` in `AIProvider`).
+  - Full Angular 18 UI tracker with metrics dashboard, filter toolbar, transition actions, and AI follow-up assistant (`ApplicationTrackerComponent`).
+  - Database migration: `V8__application_tracking.sql`.
+  - Automated tests: 109 passing tests (0 failures, 0 errors).
 
 ---
 
@@ -69,4 +79,5 @@
 - `V5__resume_management.sql` — `resumes`, `resume_experiences`, `resume_projects`, `resume_skills`, `resume_education`, `resume_certifications`.
 - `V6__resume_tailoring.sql` — `tailored_resumes`, `tailored_resume_suggestions`.
 - `V7__gmail_email_integration.sql` — `email_connections`, `emails`.
+- `V8__application_tracking.sql` — `job_applications`, `job_application_events`.
 

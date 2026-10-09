@@ -506,5 +506,58 @@ public class MockDeterministicAIProvider implements AIProvider {
 
         return new AIEmailJobExtractionResponse(company, jobTitle, externalJobId, nextSteps, notes);
     }
+
+    @Override
+    public AIApplicationGuidanceResponse generateApplicationGuidance(AIApplicationGuidanceRequest request) {
+        String company = request.companyName() != null ? request.companyName() : "the hiring team";
+        String title = request.jobTitle() != null ? request.jobTitle() : "the position";
+        String status = request.currentStatus() != null ? request.currentStatus().toUpperCase(Locale.ROOT) : "APPLIED";
+        int days = request.daysSinceApplied();
+
+        return switch (status) {
+            case "APPLIED" -> {
+                if (days >= 7) {
+                    yield new AIApplicationGuidanceResponse(
+                        "Send courteous status inquiry to talent acquisition team",
+                        "Over " + days + " days have elapsed since submission without a formal response.",
+                        "Dear " + company + " Recruiting Team,\n\nI hope this email finds you well. I submitted my application for the " +
+                            title + " role at " + company + " " + days + " days ago. I remain very interested in the opportunity and would appreciate any updates on the search timeline.\n\nThank you,\nCandidate"
+                    );
+                } else {
+                    yield new AIApplicationGuidanceResponse(
+                        "Allow standard review window (5-7 business days)",
+                        "Application was recently submitted (" + days + " days ago). Most enterprise ATS queues review within 1-2 weeks.",
+                        ""
+                    );
+                }
+            }
+            case "ASSESSMENT" -> new AIApplicationGuidanceResponse(
+                "Complete coding challenge within prescribed window and test edge cases",
+                "Technical online assessment round active. Ensure prompt submission before stated deadline.",
+                ""
+            );
+            case "INTERVIEW" -> new AIApplicationGuidanceResponse(
+                "Prepare STAR behavioral outlines, architectural trade-offs, and send post-interview thank you",
+                "Active interview evaluation stage.",
+                "Dear Interview Team at " + company + ",\n\nThank you for the insightful conversation regarding the " + title + " role today. I enjoyed learning more about the team's engineering roadmap and look forward to the next steps.\n\nBest regards,\nCandidate"
+            );
+            case "OFFER" -> new AIApplicationGuidanceResponse(
+                "Review compensation package, equity vesting, benefits, and decision deadline",
+                "Offer phase reached. Analyze market alignment before final response.",
+                ""
+            );
+            case "REJECTED" -> new AIApplicationGuidanceResponse(
+                "Archive application and conduct skills gap review against canonical job description",
+                "Requisition closed for this cycle.",
+                ""
+            );
+            default -> new AIApplicationGuidanceResponse(
+                "Review application notes and upcoming milestone dates",
+                "Application is currently in " + status + " status.",
+                ""
+            );
+        };
+    }
 }
+
 

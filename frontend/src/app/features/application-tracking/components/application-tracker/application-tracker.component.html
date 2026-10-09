@@ -1,0 +1,178 @@
+<div class="tracker-container">
+  <!-- Metrics Header -->
+  <section class="metrics-grid" *ngIf="dashboardSummary">
+    <div class="metric-card">
+      <span class="metric-label">Active Applications</span>
+      <span class="metric-val primary">{{ dashboardSummary.activeApplicationsCount }}</span>
+      <span class="metric-sub">In screening & interview</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Follow-Ups Due</span>
+      <span class="metric-val warning">{{ dashboardSummary.followUpsDueCount }}</span>
+      <span class="metric-sub">Requires candidate action</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Offers & Interviews</span>
+      <span class="metric-val success">
+        {{ (dashboardSummary.countsByStatus['INTERVIEW'] || 0) + (dashboardSummary.countsByStatus['OFFER'] || 0) }}
+      </span>
+      <span class="metric-sub">Late-stage pipeline</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Total Ingested</span>
+      <span class="metric-val text-muted">{{ dashboardSummary.totalApplicationsCount }}</span>
+      <span class="metric-sub">All-time applications</span>
+    </div>
+  </section>
+
+  <!-- Filter & Controls Toolbar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="onFilterChange()"
+        placeholder="Search company, reference or notes..."
+        class="form-input"
+      />
+      <button (click)="onFilterChange()" class="btn btn-secondary">Search</button>
+    </div>
+
+    <div class="filter-group">
+      <label for="statusFilter">Status:</label>
+      <select id="statusFilter" [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="form-select">
+        <option value="">All Statuses</option>
+        <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <!-- Applications List / Table -->
+  <div class="table-card">
+    <table class="app-table" *ngIf="applications.length > 0; else emptyState">
+      <thead>
+        <tr>
+          <th>Role / Company</th>
+          <th>Status</th>
+          <th>Source</th>
+          <th>Applied Date</th>
+          <th>Follow-Up Due</th>
+          <th>Resumes Linked</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let app of applications" [class.selected-row]="selectedApplication?.id === app.id">
+          <td>
+            <div class="job-title">{{ app.jobTitle }}</div>
+            <div class="company-name">{{ app.companyName }} <span *ngIf="app.jobLocation" class="loc-tag">({{ app.jobLocation }})</span></div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(app.status)">{{ app.status }}</span>
+          </td>
+          <td><span class="source-tag">{{ app.submissionSource }}</span></td>
+          <td>{{ app.appliedAt ? (app.appliedAt | date:'mediumDate') : '—' }}</td>
+          <td>
+            <span *ngIf="app.nextFollowUpDate" class="followup-tag">
+              {{ app.nextFollowUpDate | date:'mediumDate' }}
+            </span>
+            <span *ngIf="!app.nextFollowUpDate" class="text-muted">—</span>
+          </td>
+          <td>
+            <span class="pill pill-green" *ngIf="app.hasResumeLinked">Master CV</span>
+            <span class="pill pill-blue" *ngIf="app.hasTailoredResumeLinked">Tailored</span>
+            <span class="pill pill-gray" *ngIf="!app.hasResumeLinked && !app.hasTailoredResumeLinked">None</span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline" (click)="selectApplication(app.id)">Manage</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyState>
+      <div class="empty-box" *ngIf="!isLoading">
+        <p>No job applications match the selected criteria.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Slide-Over Detail & AI Guidance Drawer -->
+  <aside class="detail-drawer" *ngIf="selectedApplication">
+    <div class="drawer-header">
+      <div>
+        <h3>{{ selectedApplication.jobTitle }}</h3>
+        <p class="drawer-sub">{{ selectedApplication.companyName }}</p>
+      </div>
+      <button class="close-btn" (click)="closeDetail()">✕</button>
+    </div>
+
+    <div class="drawer-content">
+      <!-- Status & Transition Control -->
+      <section class="drawer-section">
+        <label class="section-heading">Lifecycle Transition</label>
+        <div class="transition-row">
+          <select [(ngModel)]="transitionTargetStatus" class="form-select">
+            <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+          </select>
+          <button (click)="performTransition()" class="btn btn-primary">Update Status</button>
+        </div>
+        <input
+          type="text"
+          [(ngModel)]="transitionNotes"
+          placeholder="Optional transition notes..."
+          class="form-input mt-2"
+        />
+      </section>
+
+      <!-- AI Advisory Guidance -->
+      <section class="drawer-section ai-section">
+        <div class="ai-header">
+          <span class="section-heading">⚡ AI Next Steps & Follow-Up</span>
+          <button (click)="fetchGuidance()" [disabled]="isGuidanceLoading" class="btn btn-sm btn-ai">
+            {{ isGuidanceLoading ? 'Generating...' : 'Get Guidance' }}
+          </button>
+        </div>
+
+        <div *ngIf="selectedGuidance" class="ai-results">
+          <div class="guidance-block">
+            <strong>Recommended Action:</strong>
+            <p>{{ selectedGuidance.recommendedAction }}</p>
+          </div>
+          <div class="guidance-block">
+            <strong>Rationale:</strong>
+            <p>{{ selectedGuidance.rationale }}</p>
+          </div>
+          <div class="guidance-block" *ngIf="selectedGuidance.draftedFollowUpMessage">
+            <div class="draft-header">
+              <strong>Drafted Message:</strong>
+              <button (click)="copyDraft()" class="btn btn-xs">Copy</button>
+            </div>
+            <pre class="draft-content">{{ selectedGuidance.draftedFollowUpMessage }}</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chronological Timeline Events -->
+      <section class="drawer-section">
+        <span class="section-heading">Application Timeline Audit</span>
+        <ul class="timeline-list">
+          <li *ngFor="let ev of selectedTimeline" class="timeline-item">
+            <div class="timeline-badge" [ngClass]="getStatusClass(ev.newStatus)">{{ ev.eventType }}</div>
+            <div class="timeline-body">
+              <div class="timeline-meta">
+                <span>{{ ev.newStatus }} (by {{ ev.source }})</span>
+                <span class="timeline-date">{{ ev.occurredAt | date:'short' }}</span>
+              </div>
+              <p *ngIf="ev.notes" class="timeline-notes">{{ ev.notes }}</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+</div>

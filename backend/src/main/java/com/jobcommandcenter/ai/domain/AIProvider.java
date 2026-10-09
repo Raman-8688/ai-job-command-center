@@ -32,6 +32,12 @@ public interface AIProvider {
     AIEmailJobExtractionResponse extractJobFromEmail(AIEmailJobExtractionRequest request);
 
     /**
+     * Generates advisory next-action guidance and polite follow-up drafts for an active application.
+     */
+    AIApplicationGuidanceResponse generateApplicationGuidance(AIApplicationGuidanceRequest request);
+
+
+    /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).
      */
     String getProviderName();
