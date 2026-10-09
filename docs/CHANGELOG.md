@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - Phase 8: Application Tracking & Lifecycle Management - 2026-10-09
+
+### Added
+- **Job Application Domain Model & Aggregate Root:** Implemented `JobApplication` managing application lifecycle states (`DRAFT`, `APPLIED`, `SCREENING`, `ASSESSMENT`, `INTERVIEW`, `OFFER`, `ACCEPTED`, `REJECTED`, `WITHDRAWN`, `ARCHIVED`) with strict state machine validation rules.
+- **Immutable Timeline Audit Log:** Created `JobApplicationEvent` capturing every state transition, note entry, resume link, and stage update chronologically with event types (`CREATED`, `STATUS_CHANGED`, `NOTE_ADDED`, `RESUME_LINKED`, `EMAIL_ASSOCIATED`, `FOLLOW_UP_SCHEDULED`, `REOPENED`).
+- **Database Schema Migration V8:** Created Flyway `V8__application_tracking.sql` with `job_applications` table, unique candidate-job constraint (`uq_job_applications_user_job`), `job_application_events` table, and performance indexes.
+- **Resume & Tailored Resume Linkages:** Direct reference and user ownership validation connecting applications to canonical master `Resume` and job-specific `TailoredResume` variants.
+- **Multi-Tenant Security Enforcement:** Complete user isolation on all endpoints; cross-user application queries return `404 Not Found` to prevent data probing.
+- **Advisory AI Next-Step & Follow-Up Guidance:** Extended `AIProvider` SPI with `generateApplicationGuidance` providing deterministic recommended next steps, status inquiry rationales, and customized follow-up draft emails.
+- **Funnel Metrics & Due Follow-Up Dashboard:** Added `/api/applications/dashboard-summary` computing active applications, overdue follow-up counts, and stage conversion breakdowns.
+- **Angular 18 Application Tracker:** Built `ApplicationTrackerComponent`, `ApplicationTrackingService`, TypeScript interfaces, metrics cards, filter/search toolbar, status badges, slide-over management drawer, and copyable AI draft integration.
+- **Backend Test Suite Expansion:** Comprehensive test suite reached 109 passing tests (0 failures, 0 errors) covering state machine invariants, REST security, and end-to-end integration flows.
+
+---
+
 ## [0.8.0] - Phase 7: Gmail & Email Integration - 2026-10-08
 
 ### Added

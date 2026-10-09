@@ -4,10 +4,25 @@
       <span class="brand-icon">⚡</span>
       <h1>{{ title }}</h1>
     </div>
+    <div class="nav-tabs">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'applications'"
+        (click)="activeTab = 'applications'">
+        Application Tracker
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'tailoring'"
+        (click)="activeTab = 'tailoring'">
+        Resume Tailoring
+      </button>
+    </div>
     <span class="badge">{{ status }}</span>
   </header>
 
   <section class="workbench-wrapper">
-    <app-tailored-resume-workbench></app-tailored-resume-workbench>
+    <app-application-tracker *ngIf="activeTab === 'applications'"></app-application-tracker>
+    <app-tailored-resume-workbench *ngIf="activeTab === 'tailoring'"></app-tailored-resume-workbench>
   </section>
 </main>
