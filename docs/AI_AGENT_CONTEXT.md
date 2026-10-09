@@ -60,6 +60,16 @@
   - Full Angular 18 UI tracker with metrics dashboard, filter toolbar, transition actions, and AI follow-up assistant (`ApplicationTrackerComponent`).
   - Database migration: `V8__application_tracking.sql`.
   - Automated tests: 109 passing tests (0 failures, 0 errors).
+- **Phase 9 — Interview Management, Preparation & Professional Angular Frontend**:
+  - Dedicated `Interview` aggregate root managing interview session lifecycle (`SCHEDULED`, `RESCHEDULED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`), round stages, formats, and evaluation outcomes.
+  - Immutable chronological timeline audit trail (`InterviewEvent`).
+  - AI Practice Question & STAR Answer guidance (`InterviewPreparation`) grounded in canonical job descriptions and verified candidate skills (`generateInterviewPrep` in `AIProvider`).
+  - Candidate custom talking points and question review tracking (`isReviewed`).
+  - Full multi-tenant isolation, 404 security protection, completed session immutability constraints.
+  - REST APIs: 13 endpoints under `/api/interviews`.
+  - Database migration: `V9__interview_management.sql`.
+  - Professional Angular 18 frontend: Interview Cockpit weekly calendar board and ElevateAI-style Interview Prep & Simulation workspace.
+  - Automated tests: 123 passing tests (0 failures, 0 errors).
 
 ---
 
@@ -67,7 +77,7 @@
 - **Backend:** Spring Boot 3.3.4 on Java 21 LTS (`http://localhost:8080`)
 - **Database:** PostgreSQL 17 on `localhost:5432` (`job_command_center`), user `postgres`, default password `postgres`.
 - **Frontend:** Angular 18 on `http://localhost:4200` (run with `npm.cmd start`).
-- **Build Tools:** Maven for backend (`mvn test`), npm for frontend (`npm.cmd run build`).
+- **Build Tools:** Maven for backend (`mvn test`), npm for frontend (`cmd.exe /c "npm --prefix frontend run build"`).
 
 ---
 
@@ -80,4 +90,5 @@
 - `V6__resume_tailoring.sql` — `tailored_resumes`, `tailored_resume_suggestions`.
 - `V7__gmail_email_integration.sql` — `email_connections`, `emails`.
 - `V8__application_tracking.sql` — `job_applications`, `job_application_events`.
+- `V9__interview_management.sql` — `interviews`, `interview_events`, `interview_preparations`.
 

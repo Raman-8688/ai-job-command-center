@@ -76,6 +76,9 @@ class ResumeIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM interview_preparations");
+        jdbcTemplate.execute("DELETE FROM interview_events");
+        jdbcTemplate.execute("DELETE FROM interviews");
         jdbcTemplate.execute("DELETE FROM job_application_events");
         jdbcTemplate.execute("DELETE FROM job_applications");
         jdbcTemplate.execute("DELETE FROM emails");

@@ -36,6 +36,11 @@ public interface AIProvider {
      */
     AIApplicationGuidanceResponse generateApplicationGuidance(AIApplicationGuidanceRequest request);
 
+    /**
+     * Generates grounded interview preparation questions and STAR guidance based on job and verified candidate skills.
+     */
+    AIInterviewPrepResponse generateInterviewPrep(AIInterviewPrepRequest request);
+
 
     /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).

@@ -1,0 +1,322 @@
+<div class="cockpit-container">
+
+  <!-- Header & Actions -->
+  <header class="cockpit-header">
+    <div class="header-left">
+      <h2 class="cockpit-title">Interview Management Cockpit</h2>
+      <p class="cockpit-subtitle">Live scheduling timeline, interviewer coordination & round tracking</p>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button [class.active]="viewMode === 'calendar'" (click)="viewMode = 'calendar'">Weekly Board</button>
+        <button [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Agenda List</button>
+      </div>
+      <button class="btn btn-primary" (click)="openScheduleModal()">
+        <span>+</span> Schedule Interview
+      </button>
+    </div>
+  </header>
+
+  <!-- Metric KPI Cards (Inspired by Reference Cockpits) -->
+  <div class="kpi-grid" *ngIf="summary">
+    <div class="kpi-card">
+      <div class="kpi-icon icon-blue">📅</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Upcoming Sessions</span>
+        <span class="kpi-value">{{ summary.upcomingInterviews }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-purple">🎯</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Completed Rounds</span>
+        <span class="kpi-value">{{ summary.completedInterviews }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-green">📊</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Scheduled</span>
+        <span class="kpi-value">{{ summary.totalInterviews }}</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon icon-amber">⚡</div>
+      <div class="kpi-info">
+        <span class="kpi-label">Readiness Index</span>
+        <span class="kpi-value">{{ summary.overallReadinessScore }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Navigation Toolbar -->
+  <div class="toolbar-card">
+    <div class="round-filters">
+      <button class="filter-chip" [class.active]="selectedRoundFilter === 'ALL'" (click)="setRoundFilter('ALL')">All Rounds</button>
+      <button class="filter-chip" [class.active]="selectedRoundFilter === 'TECHNICAL_SCREEN'" (click)="setRoundFilter('TECHNICAL_SCREEN')">Technical Screen</button>
+      <button class="filter-chip" [class.active]="selectedRoundFilter === 'SYSTEM_DESIGN'" (click)="setRoundFilter('SYSTEM_DESIGN')">System Design</button>
+      <button class="filter-chip" [class.active]="selectedRoundFilter === 'BEHAVIORAL_CULTURE'" (click)="setRoundFilter('BEHAVIORAL_CULTURE')">Behavioral & Culture</button>
+      <button class="filter-chip" [class.active]="selectedRoundFilter === 'FINAL_ROUND'" (click)="setRoundFilter('FINAL_ROUND')">Final Round</button>
+    </div>
+
+    <div class="week-nav" *ngIf="viewMode === 'calendar'">
+      <button class="nav-arrow-btn" (click)="changeWeek(-1)">‹</button>
+      <span class="week-label">Week of {{ currentWeekStart | date:'MMM d, y' }}</span>
+      <button class="nav-arrow-btn" (click)="changeWeek(1)">›</button>
+    </div>
+  </div>
+
+  <!-- Mode 1: Weekly Calendar Board (Reference Image 3 & 2) -->
+  <div class="calendar-board" *ngIf="viewMode === 'calendar'">
+    <div class="calendar-grid">
+      <div class="day-column" *ngFor="let day of calendarDays" [class.today]="day.isToday">
+        <div class="day-header">
+          <span class="day-name">{{ day.dayName }}</span>
+          <span class="day-number" [class.today-circle]="day.isToday">{{ day.dayNumber }}</span>
+        </div>
+
+        <div class="day-slots">
+          <div *ngIf="day.interviews.length === 0" class="empty-day-slot">
+            <span class="empty-slot-text">No sessions</span>
+          </div>
+
+          <div
+            *ngFor="let interview of day.interviews"
+            class="interview-card"
+            [ngClass]="'round-' + interview.round.toLowerCase()">
+
+            <div class="card-top">
+              <span class="round-badge">{{ formatRoundName(interview.round) }}</span>
+              <span class="status-indicator" [class.status-completed]="interview.status === 'COMPLETED'">
+                {{ interview.status }}
+              </span>
+            </div>
+
+            <h4 class="job-title">{{ interview.jobTitle }}</h4>
+            <div class="company-name">🏢 {{ interview.companyName }}</div>
+
+            <div class="time-slot">
+              ⏰ {{ interview.scheduledStartTime | date:'shortTime' }} - {{ interview.scheduledEndTime | date:'shortTime' }}
+            </div>
+
+            <div class="interviewer-tag" *ngIf="interview.interviewerNames">
+              👤 {{ interview.interviewerNames }}
+            </div>
+
+            <div class="card-footer">
+              <a *ngIf="interview.meetingLink" [href]="interview.meetingLink" target="_blank" class="link-btn">
+                Join Call 🔗
+              </a>
+              <div class="actions-group">
+                <button class="action-icon-btn" title="Prepare with AI" (click)="triggerPrep(interview.id)">🧠 Prep</button>
+                <button class="action-icon-btn" title="Reschedule" (click)="openRescheduleModal(interview)" *ngIf="interview.status !== 'COMPLETED'">⏱</button>
+                <button class="action-icon-btn complete-btn" title="Mark Completed" (click)="openCompleteModal(interview)" *ngIf="interview.status !== 'COMPLETED'">✅</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode 2: List / Agenda View -->
+  <div class="agenda-view" *ngIf="viewMode === 'list'">
+    <div *ngIf="filteredInterviews.length === 0" class="empty-state">
+      <p>No interviews found for the selected criteria.</p>
+    </div>
+
+    <div class="agenda-table-wrapper" *ngIf="filteredInterviews.length > 0">
+      <table class="agenda-table">
+        <thead>
+          <tr>
+            <th>Company & Job</th>
+            <th>Round</th>
+            <th>Date & Time</th>
+            <th>Format</th>
+            <th>Status / Outcome</th>
+            <th>Interviewers</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredInterviews">
+            <td>
+              <div class="table-bold">{{ item.companyName }}</div>
+              <div class="table-sub">{{ item.jobTitle }}</div>
+            </td>
+            <td>
+              <span class="round-badge">{{ formatRoundName(item.round) }}</span>
+            </td>
+            <td>
+              <div>{{ item.scheduledStartTime | date:'MMM d, y' }}</div>
+              <div class="table-sub">{{ item.scheduledStartTime | date:'shortTime' }} - {{ item.scheduledEndTime | date:'shortTime' }}</div>
+            </td>
+            <td>{{ item.format }}</td>
+            <td>
+              <span class="status-pill">{{ item.status }}</span>
+              <span class="outcome-pill" *ngIf="item.outcome && item.outcome !== 'PENDING'">{{ item.outcome }}</span>
+            </td>
+            <td>{{ item.interviewerNames || 'TBD' }}</td>
+            <td>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" (click)="triggerPrep(item.id)">🧠 Prep</button>
+                <button class="btn btn-sm btn-outline" (click)="openRescheduleModal(item)" *ngIf="item.status !== 'COMPLETED'">⏱</button>
+                <button class="btn btn-sm btn-success" (click)="openCompleteModal(item)" *ngIf="item.status !== 'COMPLETED'">✅</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal 1: Schedule Interview Modal -->
+  <div class="modal-backdrop" *ngIf="showScheduleModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Schedule New Interview</h3>
+        <button class="close-btn" (click)="showScheduleModal = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Job ID *</label>
+            <input type="text" [(ngModel)]="scheduleForm.jobId" placeholder="UUID of Target Job" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Application ID (Optional)</label>
+            <input type="text" [(ngModel)]="scheduleForm.applicationId" placeholder="UUID of Job Application" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Interview Round *</label>
+            <select [(ngModel)]="scheduleForm.round" class="form-control">
+              <option *ngFor="let r of rounds" [value]="r.value">{{ r.label }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Format *</label>
+            <select [(ngModel)]="scheduleForm.format" class="form-control">
+              <option *ngFor="let f of formats" [value]="f.value">{{ f.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" [(ngModel)]="scheduleForm.startDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Start Time *</label>
+            <input type="time" [(ngModel)]="scheduleForm.startTime" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Duration (mins)</label>
+            <input type="number" [(ngModel)]="scheduleForm.durationMinutes" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Meeting Link</label>
+            <input type="text" [(ngModel)]="scheduleForm.meetingLink" placeholder="https://meet.google.com/..." class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Interviewer Names</label>
+            <input type="text" [(ngModel)]="scheduleForm.interviewerNames" placeholder="e.g. John Doe" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Preparation Notes & Objectives</label>
+          <textarea [(ngModel)]="scheduleForm.notes" rows="3" class="form-control" placeholder="Key topics to focus on..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showScheduleModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitSchedule()">Schedule Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Reschedule Interview Modal -->
+  <div class="modal-backdrop" *ngIf="showRescheduleModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Reschedule Interview</h3>
+        <button class="close-btn" (click)="showRescheduleModal = false">×</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedInterviewForAction">
+        <p class="target-sub">Rescheduling: <strong>{{ selectedInterviewForAction.jobTitle }}</strong> at <strong>{{ selectedInterviewForAction.companyName }}</strong></p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Date *</label>
+            <input type="date" [(ngModel)]="rescheduleForm.newDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>New Time *</label>
+            <input type="time" [(ngModel)]="rescheduleForm.newTime" class="form-control" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason for Rescheduling</label>
+          <input type="text" [(ngModel)]="rescheduleForm.reason" placeholder="e.g. Recruiter conflict / candidate request" class="form-control" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showRescheduleModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="submitReschedule()">Confirm Reschedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Complete Interview Modal -->
+  <div class="modal-backdrop" *ngIf="showCompleteModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Complete Interview & Log Feedback</h3>
+        <button class="close-btn" (click)="showCompleteModal = false">×</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedInterviewForAction">
+        <p class="target-sub">Session: <strong>{{ selectedInterviewForAction.jobTitle }}</strong> at <strong>{{ selectedInterviewForAction.companyName }}</strong></p>
+
+        <div class="form-group">
+          <label>Outcome</label>
+          <select [(ngModel)]="completeForm.outcome" class="form-control">
+            <option value="PASSED">Passed (Advancing to Next Round)</option>
+            <option value="STRONG_HIRE">Strong Hire</option>
+            <option value="HIRE">Hire</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="NO_DECISION">Pending Decision</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Candidate Self-Evaluation & Interviewer Feedback</label>
+          <textarea [(ngModel)]="completeForm.feedback" rows="3" class="form-control" placeholder="What questions were asked? How did the conversation feel?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Next Step Notes</label>
+          <input type="text" [(ngModel)]="completeForm.notes" placeholder="Follow-up timeline, recruiter promised date..." class="form-control" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCompleteModal = false">Cancel</button>
+        <button class="btn btn-success" (click)="submitComplete()">Save Completion</button>
+      </div>
+    </div>
+  </div>
+
+</div>

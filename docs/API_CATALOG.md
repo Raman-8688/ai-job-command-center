@@ -550,3 +550,169 @@ Cross-Origin Resource Sharing (CORS) is enabled for `http://localhost:4200` with
 * **Success Status:** `204 No Content`
 * **Safety Constraint:** Only `DRAFT` or `WITHDRAWN` applications may be deleted. Active stages (`APPLIED`, `SCREENING`, `INTERVIEW`) reject deletion with `400 Bad Request`.
 
+---
+
+## 8. Interview Management & Preparation Endpoints (Phase 9)
+
+### 8.1 Schedule New Interview
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews`
+* **Auth:** Bearer JWT required
+* **Success Status:** `201 Created`
+* **Request Body:**
+  ```json
+  {
+    "jobId": "UUID",
+    "applicationId": "UUID (optional)",
+    "round": "TECHNICAL_SCREEN",
+    "roundNumber": 1,
+    "format": "VIDEO_CALL",
+    "scheduledStartTime": "2026-10-15T14:00:00Z",
+    "scheduledEndTime": "2026-10-15T15:00:00Z",
+    "timeZone": "America/New_York",
+    "meetingLink": "https://meet.google.com/xyz-abcd-efg",
+    "location": "Google Meet",
+    "interviewerNames": "Sarah Connor",
+    "interviewerRoles": "Engineering Director",
+    "notes": "Focus on distributed systems and high-throughput pipelines"
+  }
+  ```
+* **Validation & Security:**
+  - `jobId` must exist (otherwise `404 Not Found`).
+  - If `applicationId` provided, candidate must own it (`404 Not Found`).
+  - `scheduledEndTime` must be after `scheduledStartTime` (`400 Bad Request`).
+  - Emits initial `SCHEDULED` timeline event.
+
+### 8.2 List / Filter User Interviews
+* **Method:** `GET`
+* **Endpoint:** `/api/interviews?status={status}&round={round}&applicationId={appId}&jobId={jobId}&scheduledAfter={after}&scheduledBefore={before}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `List<InterviewSummaryResponse>`
+
+### 8.3 Get Interview Dashboard Summary
+* **Method:** `GET`
+* **Endpoint:** `/api/interviews/dashboard-summary`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:**
+  ```json
+  {
+    "totalInterviews": 4,
+    "upcomingInterviews": 2,
+    "completedInterviews": 2,
+    "countByRound": {
+      "TECHNICAL_SCREEN": 2,
+      "SYSTEM_DESIGN": 1,
+      "BEHAVIORAL_CULTURE": 1
+    },
+    "countByStatus": {
+      "SCHEDULED": 2,
+      "COMPLETED": 2
+    },
+    "nextUpcomingInterview": {
+      "id": "UUID",
+      "jobTitle": "Senior Backend Engineer",
+      "companyName": "Datadog",
+      "round": "TECHNICAL_SCREEN",
+      "scheduledStartTime": "2026-10-15T14:00:00Z"
+    },
+    "overallReadinessScore": 88
+  }
+  ```
+* **Readiness Calculation:** `overallReadinessScore` is computed strictly from actual persisted interview-preparation questions across all interviews owned by the candidate: `(reviewed questions / total questions) * 100`. If there are no interviews or no preparation questions exist yet, returns `0` (a transparent 0% indicating no preparation data, avoiding synthetic or invented scores).
+
+### 8.4 Get Interview Details
+* **Method:** `GET`
+* **Endpoint:** `/api/interviews/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `InterviewResponse` with full details, events timeline, and practice questions.
+* **Multi-Tenant Protection:** Returns `404 Not Found` if accessed by another candidate.
+
+### 8.5 Update Interview Details
+* **Method:** `PUT`
+* **Endpoint:** `/api/interviews/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `UpdateInterviewDetailsRequest`
+
+### 8.6 Reschedule Interview
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews/{id}/reschedule`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "scheduledStartTime": "2026-10-17T15:00:00Z",
+    "scheduledEndTime": "2026-10-17T16:00:00Z",
+    "timeZone": "America/New_York",
+    "reason": "Recruiter scheduling conflict"
+  }
+  ```
+* **Constraint:** Cannot reschedule `COMPLETED` or `CANCELLED` interviews (`400 Bad Request`).
+
+### 8.7 Update Interview Lifecycle Status
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews/{id}/status`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "status": "COMPLETED",
+    "outcome": "PASSED",
+    "feedback": "Strong algorithmic performance, clear communication",
+    "notes": "Advancing to next stage"
+  }
+  ```
+
+### 8.8 Update Interview Outcome
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews/{id}/outcome`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:** `UpdateInterviewOutcomeRequest` (`outcome`, `notes`).
+
+### 8.9 Delete Interview
+* **Method:** `DELETE`
+* **Endpoint:** `/api/interviews/{id}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `204 No Content`
+* **Constraint:** `COMPLETED` interviews cannot be deleted (`400 Bad Request`).
+
+### 8.10 Generate Grounded AI Interview Prep & Questions
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews/{id}/ai-prep`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `InterviewPrepBundleResponse` containing grounded practice questions categorized into `TECH`, `SYSTEM_DESIGN`, `BEHAVIORAL`, `LEADERSHIP`, with STAR model answers and readiness scoring.
+
+### 8.11 Get Interview Prep Bundle
+* **Method:** `GET`
+* **Endpoint:** `/api/interviews/{id}/prep`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `InterviewPrepBundleResponse`
+
+### 8.12 Update Question Practice Notes & Reviewed Status
+* **Method:** `PUT`
+* **Endpoint:** `/api/interviews/{id}/prep/{prepId}`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Request Body:**
+  ```json
+  {
+    "userAnswerNotes": "Situation: System crashed under peak load. Action: Scaled Redis cluster. Result: Latency reduced 50%.",
+    "isReviewed": true
+  }
+  ```
+
+### 8.13 Add Custom Practice Question
+* **Method:** `POST`
+* **Endpoint:** `/api/interviews/{id}/prep`
+* **Auth:** Bearer JWT required
+* **Success Status:** `201 Created`
+* **Request Body:** `SavePrepQuestionRequest`
+

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - Phase 9: Interview Management, Preparation & Professional Angular Frontend - 2026-10-09
+
+### Added
+- **Interview Domain Model & Aggregate Root:** Implemented `Interview` aggregate root managing interview session lifecycle (`SCHEDULED`, `RESCHEDULED`, `COMPLETED`, `CANCELLED`, `NO_SHOW`), round stages (`INITIAL_SCREEN`, `TECHNICAL_SCREEN`, `SYSTEM_DESIGN`, `BEHAVIORAL_CULTURE`, `HIRING_MANAGER`, `FINAL_ROUND`, `OTHER`), formats (`VIDEO_CALL`, `PHONE_SCREEN`, `ON_SITE`, etc.), and evaluation outcomes (`PENDING`, `PASSED`, `REJECTED`, `STRONG_HIRE`, `HIRE`, `NO_DECISION`).
+- **Immutable Timeline Audit Trail:** Created `InterviewEvent` logging all status transitions, reschedulings, notes, and outcome updates chronologically with event types (`SCHEDULED`, `RESCHEDULED`, `COMPLETED`, `CANCELLED`, `STATUS_CHANGED`, `OUTCOME_UPDATED`).
+- **Database Schema Migration V9:** Created Flyway `V9__interview_management.sql` creating `interviews`, `interview_events`, and `interview_preparations` tables with foreign keys, check constraints (`scheduled_end_time > scheduled_start_time`), and performance indexes.
+- **Job & Candidate Verified Skill Grounded AI Prep:** Extended `AIProvider` SPI with `generateInterviewPrep` method generating tailored, realistic practice questions categorized into `TECH`, `SYSTEM_DESIGN`, `BEHAVIORAL`, and `LEADERSHIP`, complete with STAR model answers and candidate readiness scoring.
+- **Candidate Practice Notes & Review Tracking:** Created `InterviewPreparation` entity allowing candidates to save private talking points, record project anecdotes, and mark practice questions as reviewed.
+- **Multi-Tenant Security Enforcement:** Full multi-tenant isolation ensuring users can only view, reschedule, or complete their own interviews; foreign queries return `404 Not Found`.
+- **Completed Session Immutability Guardrail:** Completed interviews are protected from accidental deletion or subsequent rescheduling (`400 Bad Request`).
+- **REST APIs (`/api/interviews`):** Implemented 13 endpoints covering scheduling, filtering, detail inspection, rescheduling, completion with outcome, cancellation, deletion, AI prep generation, custom questions, and dashboard metrics.
+- **Professional Angular 18 UI (Matching Reference Layouts):**
+  - **Interview Management Cockpit (Images 2 & 3):** Top KPI cards (Upcoming, Completed, Total, Readiness), weekly schedule calendar board with 7-day columns and round-colored cards, round filter chips, meeting join shortcuts, and responsive modal dialogs.
+  - **Interview Prep Workspace (Image 1):** ElevateAI-style hero greeting banner, circular SVG candidate readiness score gauge, domain skill progress bars (System Design 92%, Concurrency 88%, Data Consistency 85%, STAR 90%), category pill chips, and expandable STAR model answers.
+- **Backend Test Suite Expansion:** Reached 123 passing tests (0 failures, 0 errors) covering state machine invariants, MockMvc REST security, multi-tenant isolation, and end-to-end integration flows.
+
+---
+
 ## [0.9.0] - Phase 8: Application Tracking & Lifecycle Management - 2026-10-09
 
 ### Added
