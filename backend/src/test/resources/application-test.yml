@@ -36,4 +36,12 @@ app:
   jwt:
     secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
     expiration-ms: 86400000
+  gmail:
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:4200/email/callback
+    auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+    token-uri: https://oauth2.googleapis.com/token
+    scopes: https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email
+
 

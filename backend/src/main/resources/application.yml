@@ -43,4 +43,12 @@ app:
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  gmail:
+    client-id: ${GMAIL_CLIENT_ID:mock-client-id}
+    client-secret: ${GMAIL_CLIENT_SECRET:mock-client-secret}
+    redirect-uri: ${GMAIL_REDIRECT_URI:http://localhost:4200/email/callback}
+    auth-uri: ${GMAIL_AUTH_URI:https://accounts.google.com/o/oauth2/v2/auth}
+    token-uri: ${GMAIL_TOKEN_URI:https://oauth2.googleapis.com/token}
+    scopes: ${GMAIL_SCOPES:https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email}
+
 

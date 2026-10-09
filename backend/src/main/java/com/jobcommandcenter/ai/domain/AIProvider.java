@@ -22,6 +22,16 @@ public interface AIProvider {
     AITailoringResponse generateTailoringSuggestions(AITailoringRequest request);
 
     /**
+     * Classifies an incoming email message and calculates confidence score.
+     */
+    AIEmailClassificationResponse classifyEmail(AIEmailClassificationRequest request);
+
+    /**
+     * Extracts structured job opportunities and next steps from email content.
+     */
+    AIEmailJobExtractionResponse extractJobFromEmail(AIEmailJobExtractionRequest request);
+
+    /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).
      */
     String getProviderName();

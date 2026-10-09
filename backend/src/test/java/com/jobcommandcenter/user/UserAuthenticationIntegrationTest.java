@@ -52,11 +52,14 @@ class UserAuthenticationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        jdbcTemplate.execute("DELETE FROM emails");
+        jdbcTemplate.execute("DELETE FROM email_connections");
         jdbcTemplate.execute("DELETE FROM user_skills");
         jdbcTemplate.execute("DELETE FROM profile_target_roles");
         jdbcTemplate.execute("DELETE FROM profile_preferred_locations");
         jdbcTemplate.execute("DELETE FROM profiles");
         jdbcTemplate.execute("DELETE FROM users");
+
 
         String rawPassword = "SecurePassword123!";
         String encoded = passwordEncoder.encode(rawPassword);

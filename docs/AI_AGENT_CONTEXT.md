@@ -42,6 +42,14 @@
   - Human review lifecycle (`DRAFT` -> `UNDER_REVIEW` -> `APPROVED` / `REJECTED`).
   - Full Angular 18 frontend integration (`TailoredResumeWorkbenchComponent`).
   - Automated tests: 81 passing tests (0 failures, 0 errors).
+- **Phase 7 — Gmail & Email Integration**:
+  - Google OAuth 2.0 flow & connection lifecycle (`email_connections` table).
+  - Synchronized inbox ingestion with deduplication on message ID (`emails` table).
+  - AI & deterministic email classification into lifecycle stages (`APPLICATION_CONFIRMATION`, `INTERVIEW_INVITATION`, `ASSESSMENT`, `OFFER`, `REJECTION`, `NETWORKING_OUTREACH`).
+  - Job opportunity extraction and auto-creation (`POST /api/emails/{id}/create-job`).
+  - Bidirectional job-email association (`POST /api/emails/{id}/associate-job/{jobId}`).
+  - Zero token leakage, strict multi-tenant isolation, complete RFC 7807 contracts in `docs/API_CATALOG.md`.
+  - Database migration: `V7__gmail_email_integration.sql`.
 
 ---
 
@@ -60,3 +68,5 @@
 - `V4__job_ai_analyses.sql` — `job_ai_analyses`, `job_ai_responsibilities`, `job_ai_technologies`, `job_ai_requirements`, `job_ai_red_flags`.
 - `V5__resume_management.sql` — `resumes`, `resume_experiences`, `resume_projects`, `resume_skills`, `resume_education`, `resume_certifications`.
 - `V6__resume_tailoring.sql` — `tailored_resumes`, `tailored_resume_suggestions`.
+- `V7__gmail_email_integration.sql` — `email_connections`, `emails`.
+
