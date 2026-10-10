@@ -7,6 +7,12 @@
     <div class="nav-tabs">
       <button
         class="tab-btn"
+        [class.active]="activeTab === 'analytics'"
+        (click)="activeTab = 'analytics'">
+        📊 Career Analytics
+      </button>
+      <button
+        class="tab-btn"
         [class.active]="activeTab === 'assessments'"
         (click)="activeTab = 'assessments'">
         ⏱️ Online Assessments
@@ -46,6 +52,10 @@
   </header>
 
   <section class="workbench-wrapper">
+    <app-analytics-dashboard
+      *ngIf="activeTab === 'analytics'">
+    </app-analytics-dashboard>
+
     <app-assessment-tracker
       *ngIf="activeTab === 'assessments'"
       (openCompanyIntel)="navigateToCompanyIntel($event)">

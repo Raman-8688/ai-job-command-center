@@ -51,6 +51,11 @@ public interface AIProvider {
      */
     AICompanyDossierResponse generateCompanyDossier(AICompanyDossierRequest request);
 
+    /**
+     * Generates grounded career strategy guidance, funnel bottleneck diagnoses, and tactical next steps.
+     */
+    AIAnalyticsAdvisorResponse generateCareerStrategy(AIAnalyticsAdvisorRequest request);
+
 
     /**
      * Identifier of the AI provider (e.g. MOCK, OPENAI, ANTHROPIC, GEMINI, OLLAMA).

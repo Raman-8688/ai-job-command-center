@@ -1,0 +1,493 @@
+<div class="analytics-container">
+  <!-- Header -->
+  <header class="analytics-header">
+    <div class="header-content">
+      <div class="title-group">
+        <h2 class="page-title">📊 Career Analytics & Strategy</h2>
+        <p class="page-subtitle">
+          Authoritative pipeline metrics, funnel conversion velocity, channel effectiveness, and grounded AI strategy advisory.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button
+          class="btn btn-secondary"
+          (click)="loadAllData()"
+          [disabled]="loadingData">
+          <span *ngIf="loadingData" class="spinner-sm"></span>
+          <span>🔄 Refresh Data</span>
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="generateCareerInsights()"
+          [disabled]="loadingInsights">
+          <span *ngIf="loadingInsights" class="spinner-sm"></span>
+          <span>🧠 {{ loadingInsights ? 'Analyzing Pipeline...' : 'Generate AI Strategy Insights' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Pills -->
+    <nav class="section-nav" aria-label="Dashboard sections">
+      <button
+        class="nav-pill"
+        [class.active]="activeSection === 'overview'"
+        (click)="activeSection = 'overview'">
+        Overview KPIs
+      </button>
+      <button
+        class="nav-pill"
+        [class.active]="activeSection === 'funnel'"
+        (click)="activeSection = 'funnel'">
+        Conversion Funnel
+      </button>
+      <button
+        class="nav-pill"
+        [class.active]="activeSection === 'sources'"
+        (click)="activeSection = 'sources'">
+        Channel Effectiveness
+      </button>
+      <button
+        class="nav-pill"
+        [class.active]="activeSection === 'skills'"
+        (click)="activeSection = 'skills'">
+        Skill Demand Verification
+      </button>
+      <button
+        class="nav-pill"
+        [class.active]="activeSection === 'insights'"
+        (click)="activeSection = 'insights'">
+        AI Career Advisor
+        <span *ngIf="insights" class="pill-dot"></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Global Error Alert -->
+  <div *ngIf="globalError" class="alert alert-danger" role="alert">
+    <span>⚠️ {{ globalError }}</span>
+    <button class="btn btn-sm btn-outline-danger" (click)="loadAllData()">Retry All</button>
+  </div>
+
+  <!-- AI Insights Error Alert -->
+  <div *ngIf="insightsError" class="alert alert-warning" role="alert">
+    <span>⚠️ {{ insightsError }}</span>
+    <button class="btn btn-sm btn-outline-warning" (click)="generateCareerInsights()">Retry AI Advisor</button>
+  </div>
+
+  <!-- Main Content Body -->
+  <div class="dashboard-body">
+
+    <!-- SECTION: Overview KPIs -->
+    <section *ngIf="activeSection === 'overview' || activeSection === 'insights'" class="dashboard-section">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Career Pipeline Overview</h3>
+          <span class="text-muted">Authoritative pipeline volumes and milestone conversion rates</span>
+        </div>
+        <button *ngIf="overviewError" class="btn btn-sm btn-outline-danger" (click)="loadOverview()">Retry Overview</button>
+      </div>
+
+      <!-- Localized Section Error -->
+      <div *ngIf="overviewError && !globalError" class="alert alert-danger" role="alert">
+        <span>⚠️ {{ overviewError }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="loadOverview()">Retry</button>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div *ngIf="overviewLoading" class="skeleton-grid">
+        <div class="skeleton-card" style="height: 100px;"></div>
+        <div class="skeleton-card" style="height: 100px;"></div>
+        <div class="skeleton-card" style="height: 100px;"></div>
+        <div class="skeleton-card" style="height: 100px;"></div>
+        <div class="skeleton-card" style="height: 100px;"></div>
+      </div>
+
+      <!-- Overview Data Cards -->
+      <div *ngIf="!overviewLoading && overview" class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon icon-blue">📋</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Applications</span>
+            <span class="kpi-value">{{ overview.totalApplications }}</span>
+            <span class="kpi-subtext">{{ overview.activePipelines }} in active pipeline</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-purple">🎯</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Interviews</span>
+            <span class="kpi-value">{{ overview.interviewsCount }}</span>
+            <span class="kpi-subtext">{{ formatPercent(overview.interviewConversionRatePercent) }} progression rate</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-emerald">⏱️</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Assessments Tracked</span>
+            <span class="kpi-value">{{ overview.assessmentsCount }}</span>
+            <span class="kpi-subtext">{{ formatPercent(overview.assessmentPassRatePercent) }} pass rate</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-amber">🏆</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Active Offers</span>
+            <span class="kpi-value text-success">{{ overview.activeOffers }}</span>
+            <span class="kpi-subtext">{{ formatPercent(overview.offerRatePercent) }} overall offer rate</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-rose">🛑</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Rejections</span>
+            <span class="kpi-value text-muted">{{ overview.rejectionsCount }}</span>
+            <span class="kpi-subtext">Applications marked rejected</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!overviewLoading && overview && overview.totalApplications === 0" class="empty-state-card">
+        <p>No job applications recorded yet. Save or submit applications to begin populating pipeline KPIs.</p>
+      </div>
+    </section>
+
+    <!-- SECTION: Conversion Funnel -->
+    <section *ngIf="activeSection === 'funnel' || activeSection === 'overview'" class="dashboard-section">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Application Conversion Velocity</h3>
+          <span class="text-muted">Transition volume and median stage residency days</span>
+        </div>
+        <button *ngIf="funnelError" class="btn btn-sm btn-outline-danger" (click)="loadFunnel()">Retry Funnel</button>
+      </div>
+
+      <div *ngIf="funnelError && !globalError" class="alert alert-danger" role="alert">
+        <span>⚠️ {{ funnelError }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="loadFunnel()">Retry</button>
+      </div>
+
+      <div *ngIf="funnelLoading" class="skeleton-card" style="height: 180px;"></div>
+
+      <div *ngIf="!funnelLoading && funnel && funnel.stageConversions && funnel.stageConversions.length > 0" class="funnel-container">
+        <div class="funnel-steps">
+          <div *ngFor="let stage of funnel.stageConversions" class="funnel-step-card">
+            <div class="funnel-step-header">
+              <span class="stage-tag">{{ stage.fromStage }} ➔ {{ stage.toStage }}</span>
+              <span class="conversion-pct">{{ formatPercent(stage.conversionRatePercent) }}</span>
+            </div>
+
+            <div class="progress-bar-bg">
+              <div
+                class="progress-bar-fill"
+                [style.width.%]="stage.conversionRatePercent > 100 ? 100 : stage.conversionRatePercent">
+              </div>
+            </div>
+
+            <div class="funnel-step-meta">
+              <span><strong>{{ stage.progressedCount }}</strong> of {{ stage.enteredCount }} progressed</span>
+              <span *ngIf="stage.medianDaysInStage !== null && stage.medianDaysInStage !== undefined">
+                ⏱️ Median: {{ stage.medianDaysInStage }} days
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accessible Table Alternative -->
+        <div class="table-responsive">
+          <table class="table" aria-label="Stage Conversion Summary">
+            <thead>
+              <tr>
+                <th scope="col">From Stage</th>
+                <th scope="col">To Stage</th>
+                <th scope="col">Entered Count</th>
+                <th scope="col">Progressed Count</th>
+                <th scope="col">Conversion Rate</th>
+                <th scope="col">Median Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let stage of funnel.stageConversions">
+                <td><span class="badge badge-light">{{ stage.fromStage }}</span></td>
+                <td><span class="badge badge-primary">{{ stage.toStage }}</span></td>
+                <td>{{ stage.enteredCount }}</td>
+                <td>{{ stage.progressedCount }}</td>
+                <td><strong>{{ formatPercent(stage.conversionRatePercent) }}</strong></td>
+                <td>{{ stage.medianDaysInStage !== null ? stage.medianDaysInStage + ' days' : 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="!funnelLoading && (!funnel || !funnel.stageConversions || funnel.stageConversions.length === 0)" class="empty-state-card">
+        <p>No stage transition history recorded yet. Update application lifecycle statuses to populate funnel velocity.</p>
+      </div>
+    </section>
+
+    <!-- SECTION: Source Effectiveness -->
+    <section *ngIf="activeSection === 'sources' || activeSection === 'overview'" class="dashboard-section">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">Application Source Effectiveness</h3>
+          <span class="text-muted">Progression rates across discovery channels and submission sources</span>
+        </div>
+        <button *ngIf="sourcesError" class="btn btn-sm btn-outline-danger" (click)="loadSources()">Retry Sources</button>
+      </div>
+
+      <div *ngIf="sourcesError && !globalError" class="alert alert-danger" role="alert">
+        <span>⚠️ {{ sourcesError }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="loadSources()">Retry</button>
+      </div>
+
+      <div *ngIf="sourcesLoading" class="skeleton-grid">
+        <div class="skeleton-card" style="height: 140px;"></div>
+        <div class="skeleton-card" style="height: 140px;"></div>
+      </div>
+
+      <div *ngIf="!sourcesLoading && sources && sources.length > 0" class="sources-grid">
+        <div *ngFor="let src of sources" class="source-card">
+          <div class="source-header">
+            <h4>{{ getSourceDisplayName(src.source) }}</h4>
+            <span class="badge badge-outline">{{ src.totalApplications }} Applied</span>
+          </div>
+
+          <div class="source-rates">
+            <div class="rate-metric">
+              <span class="rate-label">Screening Rate</span>
+              <span class="rate-value">{{ formatPercent(src.screeningRatePercent) }}</span>
+              <span class="rate-count">({{ src.screeningsReached }} / {{ src.totalApplications }})</span>
+            </div>
+            <div class="rate-metric">
+              <span class="rate-label">Interview Rate</span>
+              <span class="rate-value text-primary">{{ formatPercent(src.interviewRatePercent) }}</span>
+              <span class="rate-count">({{ src.interviewsReached }} / {{ src.totalApplications }})</span>
+            </div>
+            <div class="rate-metric">
+              <span class="rate-label">Offer Rate</span>
+              <span class="rate-value text-success">{{ formatPercent(src.offerRatePercent) }}</span>
+              <span class="rate-count">({{ src.offersReceived }} / {{ src.totalApplications }})</span>
+            </div>
+          </div>
+
+          <div *ngIf="src.totalApplications < 3" class="source-notice">
+            <small>⚠️ Small sample size ({{ src.totalApplications }} applications); rates may vary significantly with single events.</small>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!sourcesLoading && (!sources || sources.length === 0)" class="empty-state-card">
+        <p>No application channels recorded yet. Ensure submitted applications are tagged with a submission source.</p>
+      </div>
+    </section>
+
+    <!-- SECTION: Skill Demand Verification -->
+    <section *ngIf="activeSection === 'skills' || activeSection === 'overview'" class="dashboard-section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3 class="section-title">Target Job Skill Demands & Profile Verification</h3>
+          <span class="text-muted">
+            Skills demanded across target job descriptions evaluated against your profile.
+            <em>Unverified status indicates skills required by target roles not yet formally tagged or validated in your profile.</em>
+          </span>
+        </div>
+        <div class="filter-group">
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="skillFilter === 'ALL'"
+            [class.btn-light]="skillFilter !== 'ALL'"
+            (click)="skillFilter = 'ALL'">
+            All Demands ({{ skills.length }})
+          </button>
+          <button
+            class="btn btn-sm"
+            [class.btn-warning]="skillFilter === 'UNVERIFIED'"
+            [class.btn-light]="skillFilter !== 'UNVERIFIED'"
+            (click)="skillFilter = 'UNVERIFIED'">
+            Unverified in Profile
+          </button>
+          <button
+            class="btn btn-sm"
+            [class.btn-success]="skillFilter === 'VERIFIED'"
+            [class.btn-light]="skillFilter !== 'VERIFIED'"
+            (click)="skillFilter = 'VERIFIED'">
+            Verified Skills
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="skillsError && !globalError" class="alert alert-danger" role="alert">
+        <span>⚠️ {{ skillsError }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="loadSkills()">Retry</button>
+      </div>
+
+      <div *ngIf="skillsLoading" class="skeleton-card" style="height: 180px;"></div>
+
+      <div *ngIf="!skillsLoading && filteredSkills.length > 0" class="skills-table-wrap">
+        <table class="table" aria-label="Skill Demands and Profile Verification">
+          <thead>
+            <tr>
+              <th scope="col">Skill Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">Market Demand</th>
+              <th scope="col">Job Frequency</th>
+              <th scope="col">Profile Verification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of filteredSkills">
+              <td><strong>{{ s.skillName }}</strong></td>
+              <td><span class="badge badge-light">{{ s.category }}</span></td>
+              <td>
+                <div class="skill-demand-cell">
+                  <div class="progress-bar-bg" style="width: 100px;">
+                    <div class="progress-bar-fill" [style.width.%]="s.marketDemandPercent"></div>
+                  </div>
+                  <span>{{ formatPercent(s.marketDemandPercent) }}</span>
+                </div>
+              </td>
+              <td>{{ s.requiredJobCount }} of {{ s.totalTargetJobs }} targeted jobs</td>
+              <td>
+                <span *ngIf="s.candidateVerified" class="badge badge-success">
+                  ✅ Verified <span *ngIf="s.candidateProficiency">({{ s.candidateProficiency }})</span>
+                </span>
+                <span *ngIf="!s.candidateVerified" class="badge badge-warning">
+                  ⚠️ Unverified in Profile
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!skillsLoading && filteredSkills.length === 0" class="empty-state-card">
+        <p>No skill requirements matching the current filter. Ingest target job descriptions or update profile skills.</p>
+      </div>
+    </section>
+
+    <!-- SECTION: AI Career Intelligence -->
+    <section *ngIf="activeSection === 'insights'" class="dashboard-section advisor-section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h3 class="section-title">🧠 Grounded AI Career Strategy Advisor</h3>
+          <span class="text-muted">Evidence-based recommendations derived strictly from your empirical pipeline metrics</span>
+        </div>
+        <button
+          class="btn btn-sm btn-outline-primary"
+          (click)="generateCareerInsights()"
+          [disabled]="loadingInsights">
+          <span *ngIf="loadingInsights" class="spinner-sm"></span>
+          <span>Regenerate Insights</span>
+        </button>
+      </div>
+
+      <!-- Loading State for Insights -->
+      <div *ngIf="loadingInsights" class="insights-loading">
+        <div class="spinner"></div>
+        <p>Synthesizing candidate conversion bottlenecks and generating tactical remedies...</p>
+      </div>
+
+      <!-- Insights Content -->
+      <div *ngIf="!loadingInsights && insights" class="insights-content">
+        <!-- Summary Banner -->
+        <div class="advisor-summary-card">
+          <div class="summary-header">
+            <h4>Strategic Pipeline Assessment</h4>
+            <span class="text-muted generated-timestamp">Generated: {{ formatDate(insights.generatedAt) }}</span>
+          </div>
+          <p class="summary-text">{{ insights.summary }}</p>
+        </div>
+
+        <!-- Bottlenecks & Recommendations Grid -->
+        <div class="advisor-grid">
+          <!-- Bottlenecks -->
+          <div class="advisor-column">
+            <h4 class="column-title">⚠️ Identified Funnel Bottlenecks ({{ insights.bottlenecks.length }})</h4>
+
+            <div *ngIf="insights.bottlenecks.length === 0" class="empty-column-card">
+              <p>No critical conversion bottlenecks detected at your current volume.</p>
+            </div>
+
+            <div *ngFor="let b of insights.bottlenecks" class="bottleneck-card">
+              <div class="card-top">
+                <span class="badge" [ngClass]="getSeverityBadgeClass(b.severity)">{{ b.severity }} IMPACT</span>
+                <span class="badge badge-light">{{ b.category }}</span>
+              </div>
+              <h5 class="bottleneck-title">{{ b.title }}</h5>
+              <p class="bottleneck-desc">{{ b.description }}</p>
+
+              <div *ngIf="b.supportingMetrics && (b.supportingMetrics | keyvalue)?.length" class="metrics-evidence">
+                <strong>Empirical Evidence:</strong>
+                <ul>
+                  <li *ngFor="let m of b.supportingMetrics | keyvalue">
+                    <code>{{ m.key }}: {{ m.value }}</code>
+                  </li>
+                </ul>
+              </div>
+
+              <div *ngIf="b.recommendedActions && b.recommendedActions.length > 0" class="actions-list">
+                <strong>Remedies:</strong>
+                <ul>
+                  <li *ngFor="let act of b.recommendedActions">{{ act }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tactical Recommendations -->
+          <div class="advisor-column">
+            <h4 class="column-title">🚀 Tactical Recommendations ({{ insights.recommendations.length }})</h4>
+
+            <div *ngIf="insights.recommendations.length === 0" class="empty-column-card">
+              <p>No immediate tactical changes recommended.</p>
+            </div>
+
+            <div *ngFor="let r of insights.recommendations" class="recommendation-card">
+              <div class="card-top">
+                <span class="badge" [ngClass]="getPriorityBadgeClass(r.priority)">{{ r.priority }} PRIORITY</span>
+              </div>
+              <h5 class="rec-action">{{ r.action }}</h5>
+              <p class="rec-rationale">{{ r.rationale }}</p>
+              <div *ngIf="r.metricEvidence" class="rec-evidence">
+                <small>Evidence: <code>{{ r.metricEvidence }}</code></small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strengths & Data Limitations -->
+        <div class="advisor-footer-grid">
+          <div class="footer-card strengths-card">
+            <h4>💪 Candidate Pipeline Strengths</h4>
+            <ul *ngIf="insights.strengths && insights.strengths.length > 0">
+              <li *ngFor="let s of insights.strengths">{{ s }}</li>
+            </ul>
+            <p *ngIf="!insights.strengths || insights.strengths.length === 0" class="text-muted">
+              Continue logging applications and interview milestones to surface comparative strengths.
+            </p>
+          </div>
+
+          <div class="footer-card limitations-card">
+            <h4>ℹ️ Data Limitations & Caveats</h4>
+            <ul *ngIf="insights.dataLimitations && insights.dataLimitations.length > 0">
+              <li *ngFor="let l of insights.dataLimitations">{{ l }}</li>
+            </ul>
+            <p *ngIf="!insights.dataLimitations || insights.dataLimitations.length === 0" class="text-muted">
+              Analysis based on your comprehensive historical record.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty Insights State -->
+      <div *ngIf="!loadingInsights && !insights" class="empty-state-card">
+        <p>No career strategy insights generated yet.</p>
+        <button class="btn btn-primary" (click)="generateCareerInsights()">Generate Career Strategy Insights</button>
+      </div>
+    </section>
+
+  </div>
+</div>
