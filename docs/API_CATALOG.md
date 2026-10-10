@@ -887,3 +887,148 @@ Cross-Origin Resource Sharing (CORS) is enabled for `http://localhost:4200` with
 * **Success Status:** `200 OK`
 * **Request Body:** `GenerateCompanyDossierRequest` (`forceRefresh`)
 * **Response Body:** `CompanyDossierResponse`
+
+---
+
+## 10. Analytics & Career Strategy Insights
+
+### 10.1 Get Analytics Overview
+* **Method:** `GET`
+* **Endpoint:** `/api/analytics/overview`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `AnalyticsOverview`
+  ```json
+  {
+    "totalApplications": 42,
+    "activeApplications": 12,
+    "interviewsScheduled": 5,
+    "offersReceived": 2,
+    "rejections": 18,
+    "overallConversionRate": 4.76,
+    "averageDaysToFirstResponse": 6.5,
+    "activeAssessmentCount": 3
+  }
+  ```
+
+### 10.2 Get Funnel Metrics
+* **Method:** `GET`
+* **Endpoint:** `/api/analytics/funnel`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `FunnelMetrics`
+  ```json
+  {
+    "stageConversions": [
+      {
+        "fromStage": "SAVED",
+        "toStage": "APPLIED",
+        "enteredCount": 50,
+        "convertedCount": 42,
+        "conversionRate": 84.0,
+        "averageDaysInStage": 2.1
+      },
+      {
+        "fromStage": "APPLIED",
+        "toStage": "SCREENING",
+        "enteredCount": 42,
+        "convertedCount": 15,
+        "conversionRate": 35.71,
+        "averageDaysInStage": 5.4
+      }
+    ],
+    "totalInFunnel": 50,
+    "reachedInterviewCount": 8,
+    "reachedOfferCount": 2
+  }
+  ```
+
+### 10.3 Get Source Effectiveness
+* **Method:** `GET`
+* **Endpoint:** `/api/analytics/sources`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** Array of `SourceEffectiveness`
+  ```json
+  [
+    {
+      "source": "LINKEDIN",
+      "applicationCount": 25,
+      "interviewCount": 4,
+      "offerCount": 1,
+      "interviewConversionRate": 16.0,
+      "offerConversionRate": 4.0
+    },
+    {
+      "source": "REFERRAL",
+      "applicationCount": 5,
+      "interviewCount": 3,
+      "offerCount": 1,
+      "interviewConversionRate": 60.0,
+      "offerConversionRate": 20.0
+    }
+  ]
+  ```
+
+### 10.4 Get Skill Gap Metrics
+* **Method:** `GET`
+* **Endpoint:** `/api/analytics/skills`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** Array of `SkillGapMetric`
+  ```json
+  [
+    {
+      "skillName": "Kubernetes",
+      "frequencyInTargetJobs": 12,
+      "frequencyInCandidateProfile": 0,
+      "candidateHasSkill": false,
+      "gapSeverity": "HIGH"
+    },
+    {
+      "skillName": "Java",
+      "frequencyInTargetJobs": 20,
+      "frequencyInCandidateProfile": 1,
+      "candidateHasSkill": true,
+      "gapSeverity": "NONE"
+    }
+  ]
+  ```
+
+### 10.5 Generate Grounded AI Career Strategy Insights
+* **Method:** `POST`
+* **Endpoint:** `/api/analytics/insights`
+* **Auth:** Bearer JWT required
+* **Success Status:** `200 OK`
+* **Response Body:** `AIAnalyticsAdvisorResponse`
+  ```json
+  {
+    "summary": "Your job search shows strong top-of-funnel activity across 42 applications with 2 offers...",
+    "bottlenecks": [
+      {
+        "category": "CONVERSION",
+        "metricName": "APPLIED_TO_SCREENING",
+        "observedValue": 22.5,
+        "targetBenchmark": 30.0,
+        "impactLevel": "HIGH",
+        "description": "Screening conversion rate is below target.",
+        "recommendedRemedy": "Tailor resumes more aggressively to match job keywords."
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "HIGH",
+        "title": "Focus on high-performing referral channels",
+        "actionItem": "Allocate more effort to referrals which yield a 60.0% interview rate.",
+        "expectedImpact": "Increase overall interview volume by 2x."
+      }
+    ],
+    "strengths": [
+      "Outstanding referral interview conversion rate of 60.0%"
+    ],
+    "dataLimitations": [
+      "No interview outcome history recorded yet; interview metrics may be incomplete."
+    ],
+    "generatedAt": "2026-10-10T10:00:00Z"
+  }
+  ```

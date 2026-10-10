@@ -63,12 +63,12 @@ class DatabaseFlywayIntegrationTest {
     }
 
     @Test
-    @DisplayName("Flyway should apply all migrations up to V10 and create Phase 10 assessment tables")
-    void flywayShouldApplyV10AndCreateAssessmentTables() {
+    @DisplayName("Flyway should apply all migrations up to V11, create assessment tables, and apply analytics indexes")
+    void flywayShouldApplyV11AndCreateAssessmentTablesAndAnalyticsIndexes() {
         var appliedMigrations = flyway.info().applied();
         assertThat(appliedMigrations).isNotEmpty();
-        assertThat(appliedMigrations[appliedMigrations.length - 1].getVersion().getVersion()).isEqualTo("10");
-        assertThat(appliedMigrations[appliedMigrations.length - 1].getDescription()).isEqualTo("online assessments and intel");
+        assertThat(appliedMigrations[appliedMigrations.length - 1].getVersion().getVersion()).isEqualTo("11");
+        assertThat(appliedMigrations[appliedMigrations.length - 1].getDescription()).isEqualTo("analytics indexes");
 
         Integer assessmentTableCount = jdbcTemplate.queryForObject(
             "SELECT count(*) FROM information_schema.tables WHERE table_name = 'online_assessments' AND table_schema = 'public'",

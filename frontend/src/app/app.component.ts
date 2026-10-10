@@ -6,12 +6,14 @@ import { InterviewCockpitComponent } from './features/interview-management/compo
 import { InterviewPrepWorkspaceComponent } from './features/interview-management/components/interview-prep-workspace/interview-prep-workspace.component';
 import { AssessmentTrackerComponent } from './features/assessment-tracking/components/assessment-tracker/assessment-tracker.component';
 import { CompanyDossierComponent } from './features/company-intel/components/company-dossier/company-dossier.component';
+import { AnalyticsDashboardComponent } from './features/analytics-dashboard/components/analytics-dashboard/analytics-dashboard.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
     CommonModule,
+    AnalyticsDashboardComponent,
     AssessmentTrackerComponent,
     CompanyDossierComponent,
     InterviewCockpitComponent,
@@ -24,8 +26,8 @@ import { CompanyDossierComponent } from './features/company-intel/components/com
 })
 export class AppComponent {
   title = 'AI Job Command Center';
-  status = 'Phase 10 — Online Assessment Tracker & Company Intel Active';
-  activeTab: 'assessments' | 'company-intel' | 'interviews' | 'prep' | 'applications' | 'tailoring' = 'assessments';
+  status = 'Phase 11 — Analytics & Career Strategy Active';
+  activeTab: 'analytics' | 'assessments' | 'company-intel' | 'interviews' | 'prep' | 'applications' | 'tailoring' = 'analytics';
   selectedInterviewIdForPrep: string | null = null;
   selectedJobIdForIntel: string | undefined = undefined;
 

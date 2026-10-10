@@ -1,9 +1,14 @@
 package com.jobcommandcenter.ai.infrastructure.provider;
 
 import com.jobcommandcenter.ai.domain.*;
+import com.jobcommandcenter.analytics.domain.AnalyticsOverview;
+import com.jobcommandcenter.analytics.domain.FunnelMetrics;
+import com.jobcommandcenter.analytics.domain.SkillGapMetric;
+import com.jobcommandcenter.analytics.domain.SourceEffectiveness;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -817,6 +822,189 @@ public class MockDeterministicAIProvider implements AIProvider {
             interviewerQuestions,
             provenanceSummary,
             confidence
+        );
+    }
+
+    @Override
+    public AIAnalyticsAdvisorResponse generateCareerStrategy(AIAnalyticsAdvisorRequest request) {
+        AnalyticsOverview overview = request.overview() != null ? request.overview() : AnalyticsOverview.empty();
+        FunnelMetrics funnel = request.funnel() != null ? request.funnel() : FunnelMetrics.empty();
+        List<SourceEffectiveness> sources = request.sourceEffectiveness() != null ? request.sourceEffectiveness() : List.of();
+        List<SkillGapMetric> skillGaps = request.skillGaps() != null ? request.skillGaps() : List.of();
+
+        List<AdvisorBottleneck> bottlenecks = new ArrayList<>();
+        List<AdvisorRecommendation> recommendations = new ArrayList<>();
+        List<String> strengths = new ArrayList<>();
+        List<String> dataLimitations = new ArrayList<>();
+
+        long totalApps = overview.totalApplications();
+
+        // Safe evaluation of zero or low data volume
+        if (totalApps == 0) {
+            String summary = "Pipeline is currently empty. No active applications, interviews, or assessments recorded.";
+            dataLimitations.add("Zero recorded job applications. Milestone conversion rates cannot be evaluated.");
+            if (skillGaps.isEmpty()) {
+                dataLimitations.add("No target jobs identified. Ingest or shortlist target positions to generate skill demand analysis.");
+            }
+            recommendations.add(new AdvisorRecommendation(
+                "Shortlist target positions and submit initial applications",
+                "Establishing an initial volume of 5-10 applications is required to compute meaningful conversion funnel diagnostics.",
+                "HIGH",
+                "totalApplications=0"
+            ));
+
+            return new AIAnalyticsAdvisorResponse(
+                summary,
+                bottlenecks,
+                recommendations,
+                strengths,
+                dataLimitations,
+                new BigDecimal("0.75"),
+                Instant.now()
+            );
+        }
+
+        if (totalApps < 5) {
+            dataLimitations.add(String.format("Low application sample size (%d total). Conversion percentages may exhibit statistical volatility.", totalApps));
+        }
+
+        // Assess funnel stages
+        BigDecimal interviewRate = overview.interviewConversionRatePercent();
+        BigDecimal assessmentPassRate = overview.assessmentPassRatePercent();
+        BigDecimal offerRate = overview.offerRatePercent();
+
+        // 1. Diagnose Screening / Resume Drop-off
+        if (totalApps >= 3 && interviewRate.compareTo(new BigDecimal("15.00")) < 0) {
+            Map<String, String> metrics = new LinkedHashMap<>();
+            metrics.put("totalApplications", String.valueOf(totalApps));
+            metrics.put("interviewConversionRate", interviewRate.toPlainString() + "%");
+            metrics.put("activePipelines", String.valueOf(overview.activePipelines()));
+
+            bottlenecks.add(new AdvisorBottleneck(
+                "RESUME_SCREENING",
+                "Resume-to-Screening Conversion Lag",
+                String.format("Candidate conversion to interview stage is currently %s%% across %d applications, below common interview thresholds.", interviewRate.toPlainString(), totalApps),
+                metrics,
+                "HIGH",
+                List.of(
+                    "Tailor resume impact bullet points to emphasize verified full-stack Java skills for each application",
+                    "Leverage higher-converting submission channels such as employee referrals where available"
+                )
+            ));
+
+            recommendations.add(new AdvisorRecommendation(
+                "Target resume tailoring to top required skills in target jobs",
+                String.format("Interview conversion rate is currently %s%% across %d applications.", interviewRate.toPlainString(), totalApps),
+                "HIGH",
+                "interviewConversionRate=" + interviewRate.toPlainString() + "%"
+            ));
+        } else if (interviewRate.compareTo(new BigDecimal("20.00")) >= 0) {
+            strengths.add(String.format("Healthy resume-to-interview progression at %s%% across %d applications.", interviewRate.toPlainString(), totalApps));
+        }
+
+        // 2. Diagnose Assessment Pass Rate
+        if (overview.assessmentsCount() > 0) {
+            if (assessmentPassRate.compareTo(new BigDecimal("50.00")) < 0) {
+                Map<String, String> metrics = new LinkedHashMap<>();
+                metrics.put("assessmentsCount", String.valueOf(overview.assessmentsCount()));
+                metrics.put("assessmentPassRate", assessmentPassRate.toPlainString() + "%");
+
+                bottlenecks.add(new AdvisorBottleneck(
+                    "ONLINE_ASSESSMENT",
+                    "Technical Assessment Pass Rate Bottleneck",
+                    String.format("Online assessment pass rate is %s%% across %d evaluated assessments.", assessmentPassRate.toPlainString(), overview.assessmentsCount()),
+                    metrics,
+                    "HIGH",
+                    List.of(
+                        "Complete generated OA study checklists before starting timed evaluations",
+                        "Review core algorithmic complexity and platform-specific constraints"
+                    )
+                ));
+
+                recommendations.add(new AdvisorRecommendation(
+                    "Prioritize OA study checklist preparation prior to taking timed tests",
+                    String.format("Assessment pass rate is currently %s%%.", assessmentPassRate.toPlainString()),
+                    "HIGH",
+                    "assessmentPassRate=" + assessmentPassRate.toPlainString() + "%"
+                ));
+            } else {
+                strengths.add(String.format("Strong online assessment execution with %s%% pass rate across %d evaluations.", assessmentPassRate.toPlainString(), overview.assessmentsCount()));
+            }
+        }
+
+        // 3. Diagnose Source Efficacy
+        Optional<SourceEffectiveness> topSource = sources.stream()
+            .filter(s -> s.totalApplications() >= 2)
+            .max(Comparator.comparing(SourceEffectiveness::interviewRatePercent));
+
+        Optional<SourceEffectiveness> lowSource = sources.stream()
+            .filter(s -> s.totalApplications() >= 3 && s.interviewRatePercent().compareTo(BigDecimal.ZERO) == 0)
+            .findFirst();
+
+        if (topSource.isPresent() && lowSource.isPresent() && !topSource.get().source().equals(lowSource.get().source())) {
+            SourceEffectiveness top = topSource.get();
+            SourceEffectiveness low = lowSource.get();
+            strengths.add(String.format("Channel efficiency: %s produces higher conversion (%s%% interview rate across %d applications).", top.source(), top.interviewRatePercent().toPlainString(), top.totalApplications()));
+            recommendations.add(new AdvisorRecommendation(
+                String.format("Shift submission volume from %s toward %s", low.source(), top.source()),
+                String.format("%s yielded 0%% interview conversion across %d applications, whereas %s converted at %s%%.", low.source(), low.totalApplications(), top.source(), top.interviewRatePercent().toPlainString()),
+                "MEDIUM",
+                "sourceEffectiveness"
+            ));
+        }
+
+        // 4. Diagnose Skill Gaps
+        List<SkillGapMetric> unverifiedGaps = skillGaps.stream()
+            .filter(g -> !g.candidateVerified() && g.marketDemandPercent().compareTo(new BigDecimal("20.00")) >= 0)
+            .limit(3)
+            .toList();
+
+        if (!unverifiedGaps.isEmpty()) {
+            SkillGapMetric topGap = unverifiedGaps.get(0);
+            Map<String, String> metrics = new LinkedHashMap<>();
+            metrics.put("skill", topGap.skillName());
+            metrics.put("marketDemand", topGap.marketDemandPercent().toPlainString() + "%");
+            metrics.put("requiredJobs", topGap.requiredJobCount() + " of " + topGap.totalTargetJobs());
+
+            bottlenecks.add(new AdvisorBottleneck(
+                "SKILL_DEFICIT",
+                String.format("High-Demand Unverified Skill Gap: %s", topGap.skillName()),
+                String.format("%s is required by %d of %d target jobs (%s%% demand) but is unverified in candidate profile.",
+                    topGap.skillName(), topGap.requiredJobCount(), topGap.totalTargetJobs(), topGap.marketDemandPercent().toPlainString()),
+                metrics,
+                "HIGH",
+                List.of(
+                    String.format("Verify proficiency in %s through coding assessment or project portfolio linkage", topGap.skillName()),
+                    "Highlight production experiences relating to " + topGap.skillName() + " on target applications"
+                )
+            ));
+
+            recommendations.add(new AdvisorRecommendation(
+                String.format("Complete verification for %s", topGap.skillName()),
+                String.format("%s appears in %s%% of targeted jobs.", topGap.skillName(), topGap.marketDemandPercent().toPlainString()),
+                "HIGH",
+                "skillGap=" + topGap.skillName()
+            ));
+        }
+
+        if (offerRate.compareTo(BigDecimal.ZERO) > 0) {
+            strengths.add(String.format("Active offer conversion generated (%d offers, %s%% of total applications).", overview.activeOffers(), offerRate.toPlainString()));
+        }
+
+        String summary = String.format(
+            "Candidate pipeline reflects %d total applications with %d active pipelines, %d interviews, and %d active offers. Interview conversion rate is %s%% and OA pass rate is %s%%.",
+            totalApps, overview.activePipelines(), overview.interviewsCount(), overview.activeOffers(),
+            interviewRate.toPlainString(), assessmentPassRate.toPlainString()
+        );
+
+        return new AIAnalyticsAdvisorResponse(
+            summary,
+            bottlenecks,
+            recommendations,
+            strengths,
+            dataLimitations,
+            new BigDecimal("0.92"),
+            Instant.now()
         );
     }
 }
